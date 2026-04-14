@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>CCB Admin Suite</title>
+    <script>
+      // GitHub Pages SPA redirect
+      // When a 404 is generated, redirect to index.html with the original path preserved
+      var pathSegments = window.location.pathname.split('/').filter(Boolean);
+      var basePath = '/ccb-admin-suite';
+      
+      // Remove base path from segments if present
+      if (pathSegments[0] === 'ccb-admin-suite') {
+        pathSegments.shift();
+      }
+      
+      // Store the redirect path and redirect to index.html
+      sessionStorage.redirect = '/' + pathSegments.join('/');
+      
+      // Redirect to index.html
+      window.location.href = basePath + '/index.html';
+    </script>
+  </head>
+  <body>
+  </body>
+</html>

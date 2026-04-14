@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- TODO: Set the document title to the name of your application -->
+    <title>CCB Admin Suite</title>
+    <meta name="description" content="CCB Admin Suite">
+    <meta name="author" content="CCB" />
+
+    <!-- Open Graph -->
+    
+    
+    <meta property="og:type" content="website" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta property="og:title" content="CCB Admin Suite">
+  <meta name="twitter:title" content="CCB Admin Suite">
+  <meta property="og:description" content="CCB Admin Suite">
+  <meta name="twitter:description" content="CCB Admin Suite">
+  <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a7bceb17-954b-487a-aca5-b7e2a8492966/id-preview-f1e52f0e--acaed234-5ab8-4123-9ae2-9233b2807b56.lovable.app-1771433481427.png">
+  <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a7bceb17-954b-487a-aca5-b7e2a8492966/id-preview-f1e52f0e--acaed234-5ab8-4123-9ae2-9233b2807b56.lovable.app-1771433481427.png">
+</head>
+
+  <body>
+    <div id="root"></div>
+    <script>
+      // GitHub Pages SPA redirect handler
+      // When coming from 404.html, restore the original path
+      (function() {
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== window.location.pathname) {
+          var baseHref = '/ccb-admin-suite';
+          var fullPath = baseHref + redirect;
+          window.history.replaceState(null, null, fullPath);
+        }
+      })();
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

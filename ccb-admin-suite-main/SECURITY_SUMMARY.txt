@@ -1,0 +1,129 @@
+🔐 PROBLEMA DE SEGURANÇA RESOLVIDO
+═════════════════════════════════════════════════════════════════
+
+✅ SITUAÇÃO: Chave de API do Google publicamente acessível
+   Location: src/lib/firebase.ts (hardcoded)
+   Risco: CRÍTICO - Acesso não autorizado ao Firebase
+
+═════════════════════════════════════════════════════════════════
+🎯 SOLUÇÃO IMPLEMENTADA
+═════════════════════════════════════════════════════════════════
+
+✅ 1. REFATORAÇÃO DE CÓDIGO
+   • Removido chaves hardcoded do firebase.ts
+   • Atualizado para usar variáveis de ambiente (import.meta.env)
+   • Aplicado em ambos os projetos (main + temp)
+
+✅ 2. CONFIGURAÇÃO DE AMBIENTE
+   • Criado: .env.local (garante que não será commitado)
+   • Criado: .env.example (template para novos devs)
+   • Atualizado: .gitignore (já ignora *.local)
+
+✅ 3. DOCUMENTAÇÃO
+   • Criado: SECURITY.md (guia completo de segurança)
+   • Criado: SECURITY_REPORT.md (relatório detalhado)
+   • Atualizado: README.md (instruções de setup)
+
+✅ 4. COMMITS GITHUB
+   commit 89e0b88 - docs: Add security incident report
+   commit 141e411 - docs: Update README with env variables
+   commit 392c72c - 🔐 Security: Move Firebase keys to env vars
+
+✅ 5. BENEFÍCIO EXTRA
+   • Atualizado também formato de horas para 24h
+   • Melhorado Congregações e Ensaios
+
+═════════════════════════════════════════════════════════════════
+⚠️  AÇÕES URGENTES NECESSÁRIAS (DO USUÁRIO)
+═════════════════════════════════════════════════════════════════
+
+🔴 PRIORIDADE 1 - Próximas 2 horas:
+   □ Acesse: https://console.cloud.google.com/
+   □ Projeto: ccbadmitba
+   □ APIs e Serviços → Credenciais
+   □ DELETE a chave: AIzaSyAU6I21qHfD-YS2i8PCu2nMJxMWgKC6Sj4
+   □ Crie NOVA chave de API
+   □ Copie para: .env.local (VITE_FIREBASE_API_KEY=...)
+
+🟡 PRIORIDADE 2 - Próximas 24 horas:
+   □ Limpe histórico Git com BFG (veja SECURITY.md)
+   □ Force push para remover histórico exposto
+
+🟢 VERIFICAÇÃO:
+   □ Monitore Google Cloud por atividades suspeitas
+   □ Teste: npm run dev (deve funcionar)
+
+═════════════════════════════════════════════════════════════════
+📊 ARQUIVOS ALTERADOS
+═════════════════════════════════════════════════════════════════
+
+CRIADOS (Novos Arquivos):
+  ✅ .env.local              - Configuração local (ignora pelo Git)
+  ✅ .env.example            - Template de configuração
+  ✅ SECURITY.md             - Guia completo de segurança
+  ✅ SECURITY_REPORT.md      - Relatório detalhado
+
+MODIFICADOS (Refatorados):
+  ✅ src/lib/firebase.ts     - Hardcoded → Env variables
+  ✅ src/lib/utils.ts        - Funções de formatação de hora
+  ✅ src/pages/Congregacoes.tsx - Múltiplos dias/horários
+  ✅ src/pages/Ensaios.tsx   - Sistema de ensaios
+  ✅ README.md               - Setup e segurança
+
+═════════════════════════════════════════════════════════════════
+🔐 PROTEÇÕES AGORA ATIVAS
+═════════════════════════════════════════════════════════════════
+
+✅ Chaves em variáveis de ambiente (não no source code)
+✅ .env.local ignorado automaticamente pelo Git
+✅ .env.example documenta todas as variáveis
+✅ firebase.ts carrega variáveis em runtime
+✅ Suporte a múltiplos ambientes (dev/staging/prod)
+✅ Compatível com CI/CD (GitHub Secrets, Vercel, etc.)
+
+═════════════════════════════════════════════════════════════════
+📖 DOCUMENTAÇÃO
+═════════════════════════════════════════════════════════════════
+
+Leia na ordem:
+1️⃣  SECURITY.md         ← Instruções de ação necessárias
+2️⃣  SECURITY_REPORT.md  ← Análise completa do problema
+3️⃣  README.md           ← Setup para novos desenvolvedores
+
+═════════════════════════════════════════════════════════════════
+✨ SETUP PARA NOVOS DESENVOLVEDORES
+═════════════════════════════════════════════════════════════════
+
+1. Clone:
+   git clone https://github.com/vmcsoftware/ccb-admin-suite.git
+
+2. Setup:
+   npm install
+   cp .env.example .env.local
+
+3. Credenciais:
+   # Peça ao lead do projeto:
+   # - VITE_FIREBASE_API_KEY
+   # - E demais variáveis
+   # Coloque no .env.local
+
+4. Develop:
+   npm run dev
+
+═════════════════════════════════════════════════════════════════
+🎉 STATUS
+═════════════════════════════════════════════════════════════════
+
+✅ Código-fonte seguro
+✅ GitHub atualizado com proteções
+⏳ Aguardando: Regeneração de chaves (FAZER AGORA!)
+⏳ Aguardando: Limpeza de histórico (24-48h)
+
+═════════════════════════════════════════════════════════════════
+
+PRÓXIMOS PASSOS:
+→ AGORA: Regenerar chaves no Google Cloud
+→ 24h: Limpar histórico com BFG
+→ Monitorar Google Cloud
+
+Documentação: Ver SECURITY.md e SECURITY_REPORT.md

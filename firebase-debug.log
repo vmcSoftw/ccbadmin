@@ -1,0 +1,94 @@
+[debug] [2026-04-14T19:01:24.836Z] ----------------------------------------------------------------------
+[debug] [2026-04-14T19:01:24.840Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\vinic\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js projects:list
+[debug] [2026-04-14T19:01:24.840Z] CLI Version:   15.1.0
+[debug] [2026-04-14T19:01:24.840Z] Platform:      win32
+[debug] [2026-04-14T19:01:24.841Z] Node Version:  v22.16.0
+[debug] [2026-04-14T19:01:24.841Z] Time:          Tue Apr 14 2026 16:01:24 GMT-0300 (Horário Padrão de Brasília)
+[debug] [2026-04-14T19:01:24.841Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-04-14T19:01:24.844Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-04-14T19:01:24.932Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-04-14T19:01:24.933Z] > authorizing via signed-in user (viniciuscarvalhoccb@gmail.com)
+[debug] [2026-04-14T19:01:24.940Z] Checked if tokens are valid: false, expires at: 1776179610850
+[debug] [2026-04-14T19:01:24.940Z] Checked if tokens are valid: false, expires at: 1776179610850
+[debug] [2026-04-14T19:01:24.940Z] > refreshing access token with scopes: []
+[debug] [2026-04-14T19:01:24.944Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-04-14T19:01:24.945Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-04-14T19:01:25.224Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-04-14T19:01:25.225Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-04-14T19:01:25.234Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=1000
+[debug] [2026-04-14T19:01:25.358Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-04-14T19:01:25.359Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[debug] [2026-04-14T19:01:26.873Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
+[debug] [2026-04-14T19:01:26.874Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[info] ┌───────────────────────────┬────────────────────────────┬────────────────┬──────────────────────┐
+│ Project Display Name      │ Project ID                 │ Project Number │ Resource Location ID │
+├───────────────────────────┼────────────────────────────┼────────────────┼──────────────────────┤
+│ sistemacontroledeligacoes │ agendaccb-73569            │ 745107890249   │ [Not specified]      │
+├───────────────────────────┼────────────────────────────┼────────────────┼──────────────────────┤
+│ agendar                   │ agendar-92c07              │ 476296568739   │ [Not specified]      │
+├───────────────────────────┼────────────────────────────┼────────────────┼──────────────────────┤
+│ bibliakids                │ bibliakids-4ee0d           │ 788263151327   │ [Not specified]      │
+├───────────────────────────┼────────────────────────────┼────────────────┼──────────────────────┤
+│ bibliotech                │ bibliotech-4bd00 (current) │ 321228700271   │ [Not specified]      │
+├───────────────────────────┼────────────────────────────┼────────────────┼──────────────────────┤
+│ ccbadmitba                │ ccbadmitba                 │ 60371542427    │ [Not specified]      │
+├───────────────────────────┼────────────────────────────┼────────────────┼──────────────────────┤
+│ EduPonto                  │ eduponto-gestao            │ 992888726579   │ [Not specified]      │
+├───────────────────────────┼────────────────────────────┼────────────────┼──────────────────────┤
+│ marcacao                  │ marcacao-79921             │ 413885843715   │ [Not specified]      │
+├───────────────────────────┼────────────────────────────┼────────────────┼──────────────────────┤
+│ profpergunta              │ profpergunta               │ 253418177807   │ [Not specified]      │
+├───────────────────────────┼────────────────────────────┼────────────────┼──────────────────────┤
+│ SAEM                      │ saem-d58b3                 │ 1070231724858  │ [Not specified]      │
+└───────────────────────────┴────────────────────────────┴────────────────┴──────────────────────┘
+[info] 
+[info] 9 project(s) total.
+[debug] [2026-04-14T19:02:16.435Z] ----------------------------------------------------------------------
+[debug] [2026-04-14T19:02:16.438Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\vinic\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js apps:list --project ccbadmitba
+[debug] [2026-04-14T19:02:16.438Z] CLI Version:   15.1.0
+[debug] [2026-04-14T19:02:16.438Z] Platform:      win32
+[debug] [2026-04-14T19:02:16.438Z] Node Version:  v22.16.0
+[debug] [2026-04-14T19:02:16.439Z] Time:          Tue Apr 14 2026 16:02:16 GMT-0300 (Horário Padrão de Brasília)
+[debug] [2026-04-14T19:02:16.439Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-04-14T19:02:16.511Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-04-14T19:02:16.513Z] > authorizing via signed-in user (viniciuscarvalhoccb@gmail.com)
+[debug] [2026-04-14T19:02:16.519Z] Checked if tokens are valid: true, expires at: 1776196884225
+[debug] [2026-04-14T19:02:16.519Z] Checked if tokens are valid: true, expires at: 1776196884225
+[debug] [2026-04-14T19:02:16.521Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/ccbadmitba:searchApps pageSize=100
+[debug] [2026-04-14T19:02:17.188Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/ccbadmitba:searchApps 200
+[debug] [2026-04-14T19:02:17.188Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/ccbadmitba:searchApps {"apps":[{"name":"projects/ccbadmitba/webApps/1:60371542427:web:4fa20e76aaef21d538813e","displayName":"ccbadminitba","platform":"WEB","appId":"1:60371542427:web:4fa20e76aaef21d538813e","namespace":"NzJlZGM4MDctNzJhNS00MjQ2LThiNDEtOWY1ZDVmM2UyM2Nl","apiKeyId":"62373c03-55d4-4c2e-a1d4-1cf0328d33d1","state":"ACTIVE","expireTime":"1970-01-01T00:00:00Z"}]}
+[info] ┌──────────────────┬──────────────────────────────────────────┬──────────┐
+│ App Display Name │ App ID                                   │ Platform │
+├──────────────────┼──────────────────────────────────────────┼──────────┤
+│ ccbadminitba     │ 1:60371542427:web:4fa20e76aaef21d538813e │ WEB      │
+└──────────────────┴──────────────────────────────────────────┴──────────┘
+[info] 
+[info] 1 app(s) total.
+[debug] [2026-04-14T19:02:27.179Z] ----------------------------------------------------------------------
+[debug] [2026-04-14T19:02:27.183Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\vinic\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js apps:sdkconfig WEB 1:60371542427:web:4fa20e76aaef21d538813e --project ccbadmitba
+[debug] [2026-04-14T19:02:27.184Z] CLI Version:   15.1.0
+[debug] [2026-04-14T19:02:27.184Z] Platform:      win32
+[debug] [2026-04-14T19:02:27.184Z] Node Version:  v22.16.0
+[debug] [2026-04-14T19:02:27.184Z] Time:          Tue Apr 14 2026 16:02:27 GMT-0300 (Horário Padrão de Brasília)
+[debug] [2026-04-14T19:02:27.185Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-04-14T19:02:27.232Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-04-14T19:02:27.234Z] > authorizing via signed-in user (viniciuscarvalhoccb@gmail.com)
+[debug] [2026-04-14T19:02:27.239Z] Checked if tokens are valid: true, expires at: 1776196884225
+[debug] [2026-04-14T19:02:27.240Z] Checked if tokens are valid: true, expires at: 1776196884225
+[debug] [2026-04-14T19:02:27.242Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:60371542427:web:4fa20e76aaef21d538813e/config [none]
+[debug] [2026-04-14T19:02:28.353Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:60371542427:web:4fa20e76aaef21d538813e/config 200
+[debug] [2026-04-14T19:02:28.353Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:60371542427:web:4fa20e76aaef21d538813e/config {"projectId":"ccbadmitba","appId":"1:60371542427:web:4fa20e76aaef21d538813e","storageBucket":"ccbadmitba.firebasestorage.app","apiKey":"AIzaSyAU6I21qHfD-YS2i8PCu2nMJxMWgKC6Sj4","authDomain":"ccbadmitba.firebaseapp.com","messagingSenderId":"60371542427","measurementId":"G-PHK2V24RF9","projectNumber":"60371542427","version":"2"}
+[info] {
+  "projectId": "ccbadmitba",
+  "appId": "1:60371542427:web:4fa20e76aaef21d538813e",
+  "storageBucket": "ccbadmitba.firebasestorage.app",
+  "apiKey": "AIzaSyAU6I21qHfD-YS2i8PCu2nMJxMWgKC6Sj4",
+  "authDomain": "ccbadmitba.firebaseapp.com",
+  "messagingSenderId": "60371542427",
+  "measurementId": "G-PHK2V24RF9",
+  "projectNumber": "60371542427",
+  "version": "2"
+}
