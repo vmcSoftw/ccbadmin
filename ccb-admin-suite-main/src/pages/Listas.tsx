@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { Lista, Categoria, Aviso, ConfiguracaoEstilo, RegrasEnsaio } from '@/types';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 export default function Listas() {
@@ -507,183 +507,214 @@ export default function Listas() {
     return ensaiosAgendados.sort((a, b) => a.data.localeCompare(b.data));
   };
 
-  const gerarPDF = async () => {
-    const activeRef = tela === 'gerenciar' ? previewRefGerenciar : previewRefEditor;
-    if (!activeRef.current) return;
-    
+  const gerarPDF = () => {
     try {
-      const element = activeRef.current;
-      
-      // Criar um wrapper temporário
-      const wrapper = document.createElement('div');
-      wrapper.id = 'pdf-wrapper';
-      wrapper.style.position = 'absolute';
-      wrapper.style.left = '-9999px';
-      wrapper.style.width = '210mm';
-      wrapper.style.margin = '0';
-      wrapper.style.padding = '5mm';
-      wrapper.style.backgroundColor = 'white';
-      wrapper.style.color = '#000';
-      wrapper.style.fontFamily = getFontFamilyStyle();
-      
-      // Clonar elemento
-      const clone = element.cloneNode(true) as HTMLElement;
-      
-      // Gerar data e hora do rodapé
-      const agora = new Date();
-      const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
-      const dia = agora.getDate();
-      const mes = meses[agora.getMonth()];
-      const ano = agora.getFullYear();
-      const horas = agora.getHours();
-      const minutos = String(agora.getMinutes()).padStart(2, '0');
-      
-      const rodapeTexto = `Ituiutaba/MG, ${dia} de ${mes.charAt(0).toUpperCase() + mes.slice(1)} de ${ano} às ${horas}h${minutos}`;
-      
-      // Criar elemento do rodapé
-      const rodapeDiv = document.createElement('div');
-      rodapeDiv.style.marginTop = '30px';
-      rodapeDiv.style.paddingTop = '20px';
-      rodapeDiv.style.borderTop = '1px solid #999';
-      rodapeDiv.style.textAlign = 'right';
-      rodapeDiv.style.fontSize = '10pt';
-      rodapeDiv.style.fontFamily = getFontFamilyStyle();
-      rodapeDiv.style.color = '#333';
-      rodapeDiv.textContent = rodapeTexto;
-      
-      // Adicionar rodapé ao clone
-      clone.appendChild(rodapeDiv);
-      
-      // Copiar estilos computados para TODOS os elementos
-      const allElements = clone.querySelectorAll('*');
-      allElements.forEach((el) => {
-        const htmlEl = el as HTMLElement;
-        const computed = window.getComputedStyle(htmlEl);
-        
-        // Copiar styles de texto e cor
-        htmlEl.style.color = computed.color;
-        htmlEl.style.fontSize = computed.fontSize;
-        htmlEl.style.fontWeight = computed.fontWeight;
-        htmlEl.style.fontStyle = computed.fontStyle;
-        htmlEl.style.fontFamily = computed.fontFamily;
-        htmlEl.style.letterSpacing = computed.letterSpacing;
-        htmlEl.style.textTransform = computed.textTransform;
-        htmlEl.style.textDecoration = computed.textDecoration;
-        
-        // Copiar estilos de background e border
-        htmlEl.style.backgroundColor = computed.backgroundColor;
-        htmlEl.style.borderColor = computed.borderColor;
-        htmlEl.style.borderWidth = computed.borderWidth;
-        htmlEl.style.borderStyle = computed.borderStyle;
-        
-        // Copiar espaçamento
-        htmlEl.style.margin = computed.margin;
-        htmlEl.style.padding = computed.padding;
-        htmlEl.style.lineHeight = computed.lineHeight;
-        
-        // Forçar alinhamento à esquerda, EXCETO para cabeçalho (manter centrado)
-        if (htmlEl.classList.contains('text-center') || computed.textAlign === 'center') {
-          htmlEl.style.textAlign = 'center';
-        } else {
-          htmlEl.style.textAlign = 'left';
-        }
-        htmlEl.style.verticalAlign = 'middle';
-        
-        // Remover apenas inputs, buttons, checkboxes e flex containers interativos
-        if (htmlEl.tagName === 'INPUT' || 
-            htmlEl.tagName === 'BUTTON' || 
-            (htmlEl.classList && htmlEl.classList.contains('flex'))) {
-          htmlEl.style.display = 'none !important';
-        }
-      });
-      
-      // Restaurar alinhamento do rodapé (direita)
-      rodapeDiv.style.textAlign = 'right';
-      
-      wrapper.appendChild(clone);
-      document.body.appendChild(wrapper);
-      
-      // Aguardar render
-      await new Promise(resolve => setTimeout(resolve, 150));
-      
-      // Renderizar com html2canvas
-      const canvas = await html2canvas(wrapper, {
-        scale: 1.5,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        windowWidth: 1000,
-        logging: false,
-        allowTaint: true,
-        imageTimeout: 0,
-        removeContainer: false,
-      });
-      
-      // Criar PDF
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-      
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
-      const availableWidth = pageWidth - (margin * 2);
-      
-      // Calcular proporções
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const ratio = availableWidth / imgWidth;
-      
-      // Quebrar em páginas
-      let yOffset = 0;
-      let isFirstPage = true;
-      
-      while (yOffset < imgHeight) {
-        if (!isFirstPage) {
-          pdf.addPage();
-        }
-        
-        const availableHeight = (pageHeight - (margin * 2)) / ratio;
-        const heightToCopy = Math.min(availableHeight, imgHeight - yOffset);
-        
-        // Slice do canvas
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = imgWidth;
-        tempCanvas.height = Math.ceil(heightToCopy);
-        
-        const ctx = tempCanvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(
-            canvas,
-            0, yOffset,
-            imgWidth, heightToCopy,
-            0, 0,
-            imgWidth, heightToCopy
-          );
-        }
-        
-        const imgData = tempCanvas.toDataURL('image/png');
-        const imgHeightOnPage = heightToCopy * ratio;
-        
-        pdf.addImage(imgData, 'PNG', margin, margin, availableWidth, imgHeightOnPage);
-        
-        yOffset += heightToCopy;
-        isFirstPage = false;
-        
-        if (yOffset >= imgHeight) break;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const marginLeft = 10;
+      const marginRight = 10;
+      const contentWidth = pageWidth - marginLeft - marginRight;
+
+      // ── DADOS SELECIONADOS ──────────────────────────────────────────────────
+      const selectedEventos = eventosReuniao.filter(e => eventosParaSelecionar.includes(e.id));
+      const selectedReforcos = reforcosSalvos.filter(r => reforcoParaSelecionar.includes(r.id));
+      const selectedEnsaios = ensaios.filter(e => ensaiosParaSelecionar.includes(e.id));
+
+      if (selectedEventos.length === 0 && selectedReforcos.length === 0 && selectedEnsaios.length === 0) {
+        alert('Nenhum evento selecionado para gerar PDF.');
+        return;
       }
-      
-      pdf.save(`lista-ccb-${new Date().toISOString().slice(0, 10)}.pdf`);
-      
+
+      // ── CABEÇALHO ───────────────────────────────────────────────────────────
+      let yPos = 14;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text('CONGREGAÇÃO CRISTÃ NO BRASIL', pageWidth / 2, yPos, { align: 'center' });
+      yPos += 5;
+
+      const mesNome = meses[listaEditando?.mes ?? 0].toUpperCase();
+      const anoLista = listaEditando?.ano ?? new Date().getFullYear();
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text(`REGIONAL UBERLÂNDIA — ${mesNome} DE ${anoLista}`, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 4;
+      doc.text('ADMINISTRAÇÃO DE ITUIUTABA', pageWidth / 2, yPos, { align: 'center' });
+      yPos += 5;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text((listaEditando?.nome || 'LISTA').toUpperCase(), pageWidth / 2, yPos, { align: 'center' });
+      yPos += 4;
+
+      doc.setDrawColor(50, 50, 50);
+      doc.setLineWidth(0.4);
+      doc.line(marginLeft, yPos, pageWidth - marginRight, yPos);
+      yPos += 5;
+
+      // ── HELPER: desenhar título de seção ────────────────────────────────────
+      const drawSectionTitle = (title: string) => {
+        if (yPos > pageHeight - 30) { doc.addPage(); yPos = 14; }
+        doc.setFillColor(210, 210, 210);
+        doc.rect(marginLeft, yPos - 4, contentWidth, 6.5, 'F');
+        doc.setDrawColor(50, 50, 50);
+        doc.setLineWidth(0.3);
+        doc.rect(marginLeft, yPos - 4, contentWidth, 6.5, 'S');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(20, 20, 20);
+        doc.text(title.toUpperCase(), marginLeft + 2, yPos);
+        yPos += 3;
+      };
+
+      // ── HELPER: autoTable com estilo padrão ─────────────────────────────────
+      const addTable = (head: string[], rows: string[][], colWidths?: { [k: number]: { cellWidth: number } }) => {
+        const columnStyles: { [k: number]: { cellWidth: number } } = { 0: { cellWidth: 22 }, 1: { cellWidth: 14 } };
+        if (colWidths) Object.assign(columnStyles, colWidths);
+
+        autoTable(doc, {
+          startY: yPos,
+          head: [head],
+          body: rows,
+          theme: 'grid',
+          margin: { left: marginLeft, right: marginRight },
+          styles: {
+            fontSize: 8.5,
+            cellPadding: 1.5,
+            textColor: [20, 20, 20] as [number, number, number],
+            lineColor: [80, 80, 80] as [number, number, number],
+            lineWidth: 0.2,
+            font: 'helvetica',
+            valign: 'middle',
+            overflow: 'linebreak',
+          },
+          headStyles: {
+            fillColor: [220, 220, 220] as [number, number, number],
+            textColor: [10, 10, 10] as [number, number, number],
+            fontStyle: 'bold',
+            fontSize: 8.5,
+          },
+          alternateRowStyles: { fillColor: [248, 248, 248] as [number, number, number] },
+          columnStyles,
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        yPos = (doc as any).lastAutoTable.finalY + 4;
+      };
+
+      // ── SEÇÕES DE EVENTOS / REFORÇOS / ENSAIOS ──────────────────────────────
+      const diasSemanaAbr = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
+
+      const tiposEventos  = [...new Set(selectedEventos.map(e => e.subtipoReuniao))] as string[];
+      const tiposReforcos = [...new Set(selectedReforcos.map(r => r.tipo))] as string[];
+      const tiposEnsaios  = selectedEnsaios.length > 0 ? ['Ensaio Regional'] : [];
+      const todosTipos    = getSortedEventTypes([...tiposEventos, ...tiposReforcos, ...tiposEnsaios]);
+
+      for (const tipo of todosTipos) {
+        // EVENTOS
+        const eventosDoTipo = selectedEventos.filter(e => e.subtipoReuniao === tipo);
+        if (eventosDoTipo.length > 0) {
+          const isMinisterial = tipo === 'Reunião Ministerial' || tipo === 'Reunião Extra';
+          const isRJM = tipo === 'Reunião para Mocidade' || tipo === 'RJM com Busca dos Dons' || tipo === 'Culto para Jovens';
+          const lastHeader = isMinisterial ? 'PARTICIPAM' : isRJM ? 'IRMÃO' : 'ANCIÃO';
+          const headers = tipo === 'Reuniões' ? ['DATA', 'HORA', 'LOCALIDADE'] : ['DATA', 'HORA', 'LOCALIDADE', lastHeader];
+
+          const rows = eventosDoTipo
+            .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
+            .map(e => {
+              const d = new Date(e.data + 'T12:00:00');
+              const dataFmt = `${d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ${diasSemanaAbr[d.getDay()]}`;
+              const localidade = getCongregacaoNome(e.congregacaoId) || '—';
+              if (tipo === 'Reuniões') return [dataFmt, e.horario || '—', localidade];
+              let last = '—';
+              if (isMinisterial) {
+                last = listaEditando?.participamOverrides?.[e.id] ?? (tipo === 'Reunião Ministerial' ? (e.descricao || '—') : (e.anciaoAtende || '—'));
+              } else if (isRJM) {
+                last = listaEditando?.participamOverrides?.[e.id] ?? (reduzirNome(e.anciaoAtende) || '—');
+              } else {
+                last = reduzirNome(e.anciaoAtende) || '—';
+              }
+              return [dataFmt, e.horario || '—', localidade, last];
+            });
+
+          drawSectionTitle(getDisplayName(tipo));
+          addTable(headers, rows);
+        }
+
+        // REFORÇOS
+        const reforcosDoTipo = selectedReforcos.filter(r => r.tipo === tipo);
+        if (reforcosDoTipo.length > 0) {
+          const rows = reforcosDoTipo
+            .sort((a, b) => a.data.localeCompare(b.data))
+            .map(r => {
+              const d = new Date(r.data + 'T12:00:00');
+              const dataFmt = `${d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} ${diasSemanaAbr[d.getDay()]}`;
+              const membrosLocais = r.membros?.map(id => reduzirNome(membros.find(m => m.id === id)?.nome || '')).filter(Boolean) ?? [];
+              const membrosOutras = r.membrosOutrasLocalidades?.map(m => `${reduzirNome(m.nome)} (${m.localidade})`) ?? [];
+              return [dataFmt, r.horario || '—', getCongregacaoNome(r.congregacaoId) || '—', [...membrosLocais, ...membrosOutras].join(', ') || '—'];
+            });
+
+          drawSectionTitle(`Reforço — ${getDisplayName(tipo)}`);
+          addTable(['DATA', 'HORA', 'LOCALIDADE', 'IRMÃO'], rows);
+        }
+
+        // ENSAIOS REGIONAIS
+        if (tipo === 'Ensaio Regional' && selectedEnsaios.length > 0) {
+          const rows = selectedEnsaios.map(ensaio => {
+            const dataBR = ensaio.data
+              ? new Date(ensaio.data + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+              : '—';
+            const nomeAnciao = ensaio.anciaoOutraLocalidade
+              ? ensaio.anciaoOutraLocalidade.nome
+              : ensaio.anciao
+                ? reduzirNome(membros.find(m => m.id === ensaio.anciao)?.nome || ensaio.anciao)
+                : '—';
+            const nomeEncarregado = ensaio.encarregadoRegionalOutraLocalidade
+              ? ensaio.encarregadoRegionalOutraLocalidade.nome
+              : ensaio.encarregadoRegional
+                ? reduzirNome(membros.find(m => m.id === ensaio.encarregadoRegional)?.nome || ensaio.encarregadoRegional)
+                : '—';
+            return [dataBR, ensaio.horario || '—', getCongregacaoNome(ensaio.congregacaoId) || '—', nomeAnciao, nomeEncarregado];
+          });
+
+          drawSectionTitle('Ensaio Regional');
+          addTable(['DATA', 'HORÁRIO', 'CONGREGAÇÃO', 'ANCIÃO', 'ENC. REGIONAL'], rows, { 1: { cellWidth: 16 } });
+        }
+      }
+
+      // ── AVISOS ───────────────────────────────────────────────────────────────
+      const avisosVisiveis = (listaEditando?.avisos || []).filter(a => a.mostrarNoPreview !== false);
+      if (avisosVisiveis.length > 0) {
+        drawSectionTitle('AVISOS');
+        addTable(['TÍTULO', 'ASSUNTO'], avisosVisiveis.map(a => [a.titulo, a.assunto]), { 0: { cellWidth: 45 } });
+      }
+
+      // ── RODAPÉ EM TODAS AS PÁGINAS ───────────────────────────────────────────
+      const agora = new Date();
+      const mesesPt = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+      const rodapeTexto = `Ituiutaba/MG, ${agora.getDate()} de ${mesesPt[agora.getMonth()].replace(/^\w/, c => c.toUpperCase())} de ${agora.getFullYear()} às ${agora.getHours()}h${String(agora.getMinutes()).padStart(2, '0')}`;
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        const footerY = pageHeight - 5;
+        doc.setDrawColor(150, 150, 150);
+        doc.setLineWidth(0.25);
+        doc.line(marginLeft, footerY - 3, pageWidth - marginRight, footerY - 3);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(110, 110, 110);
+        doc.text(`Pág. ${i}/${totalPages}`, marginLeft, footerY);
+        if (i === totalPages) {
+          doc.text(rodapeTexto, pageWidth - marginRight, footerY, { align: 'right' });
+        }
+      }
+
+      doc.save(`lista-ccb-${new Date().toISOString().slice(0, 10)}.pdf`);
     } catch (error) {
       console.error('Erro ao gerar PDF:', error);
       alert('Erro ao gerar PDF: ' + (error instanceof Error ? error.message : String(error)));
-    } finally {
-      const wrapper = document.getElementById('pdf-wrapper');
-      if (wrapper && wrapper.parentNode) {
-        document.body.removeChild(wrapper);
-      }
     }
   };
 
@@ -1075,7 +1106,7 @@ export default function Listas() {
                               <th className="px-4 py-2 text-left">Data</th>
                               <th className="px-4 py-2 text-left">Hora</th>
                               <th className="px-4 py-2 text-left">Localidade</th>
-                              <th className="px-4 py-2 text-left">{tipoReuniao === 'Reunião Ministerial' ? 'Participam' : 'Irmão'}</th>
+                              <th className="px-4 py-2 text-left">{(tipoReuniao === 'Reunião Ministerial' || tipoReuniao === 'Reunião Extra') ? 'Participam' : 'Irmão'}</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1098,8 +1129,19 @@ export default function Listas() {
                                 <td className="px-4 py-2">{e.horario || '—'}</td>
                                 <td className="px-4 py-2">{getCongregacaoNome(e.congregacaoId) || '—'}</td>
                                 <td className="px-4 py-2">
-                                  {tipoReuniao === 'Reunião Ministerial' 
-                                    ? (e.descricao ? e.descricao : '—')
+                                  {(tipoReuniao === 'Reunião Ministerial' || tipoReuniao === 'Reunião Extra' || tipoReuniao === 'Reunião para Mocidade' || tipoReuniao === 'RJM com Busca dos Dons' || tipoReuniao === 'Culto para Jovens')
+                                    ? (
+                                      <input
+                                        type="text"
+                                        className="w-full border border-border rounded px-2 py-1 text-sm bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                                        placeholder={(tipoReuniao === 'Reunião Ministerial' || tipoReuniao === 'Reunião Extra') ? 'Participantes...' : 'Irmão...'}
+                                        value={listaEditando?.participamOverrides?.[e.id] ?? (tipoReuniao === 'Reunião Ministerial' ? (e.descricao || '') : (e.anciaoAtende || ''))}
+                                        onChange={(ev) => setListaEditando(prev => prev ? {
+                                          ...prev,
+                                          participamOverrides: { ...(prev.participamOverrides || {}), [e.id]: ev.target.value }
+                                        } : null)}
+                                      />
+                                    )
                                     : (e.anciaoAtende ? reduzirNome(e.anciaoAtende) : '—')
                                   }
                                 </td>
@@ -1505,13 +1547,13 @@ export default function Listas() {
 
                 {/* PREVIEW CONTENT - SERÁ INCLUÍDO NO PDF */}
                 <div className="border-2 border-border rounded-lg overflow-hidden">
-                  <div className={`bg-white p-3 space-y-2 ${getLineHeightClass()}`} ref={previewRefGerenciar} style={{ fontFamily: getFontFamilyStyle() }}>
+                  <div className={`bg-white p-4 space-y-3 ${getLineHeightClass()}`} ref={previewRefGerenciar} style={{ fontFamily: getFontFamilyStyle() }}>
                     {/* CABEÇALHO */}
-                    <div className="lista-section text-center space-y-0.5 pb-2 border-b-2 border-gray-800">
-                      <div className="text-xs font-semibold tracking-wider">CONGREGAÇÃO CRISTÃ NO BRASIL</div>
-                      <div className="text-xs font-semibold tracking-wider">REGIONAL UBERLÂNDIA - {meses[listaEditando?.mes || 0].toUpperCase()} DE {listaEditando?.ano || new Date().getFullYear()}</div>
-                      <div className="text-xs font-semibold tracking-wider">ADMINISTRAÇÃO DE ITUIUTABA</div>
-                      <div className="text-sm font-bold mt-1.5">{listaEditando?.nome || 'LISTA'}</div>
+                    <div className="lista-section text-center space-y-1 pb-3 border-b-2 border-gray-900">
+                      <div className="text-sm font-bold tracking-wider uppercase">Congregação Cristã no Brasil</div>
+                      <div className="text-xs font-semibold tracking-wide">Regional Uberlândia — {meses[listaEditando?.mes || 0]} de {listaEditando?.ano || new Date().getFullYear()}</div>
+                      <div className="text-xs font-semibold tracking-wide">Administração de Ituiutaba</div>
+                      <div className="text-base font-extrabold mt-2 uppercase tracking-wide">{listaEditando?.nome || 'LISTA'}</div>
                     </div>
 
                     {/* EVENTOS, REFORÇOS E ENSAIOS - ORDENADOS CONFORME CONFIGURAÇÃO DO USUÁRIO */}
@@ -1539,9 +1581,9 @@ export default function Listas() {
                             // Renderizar EVENTOS
                             if (eventos.length > 0) {
                               return (
-                                <div key={`evento-${tipo}`} className="lista-section space-y-1">
-                                  <div className="flex items-center justify-between pb-1 border-b border-gray-900">
-                                    <h5 className="font-bold text-sm text-gray-900 uppercase">{getDisplayName(tipo)}</h5>
+                                <div key={`evento-${tipo}`} className="lista-section space-y-1 mt-2">
+                                  <div className="flex items-center justify-between py-1 px-1.5 bg-gray-200 border border-gray-900 rounded-sm">
+                                    <h5 className="font-bold text-sm text-gray-900 uppercase tracking-wide">{getDisplayName(tipo)}</h5>
                                     <input type="checkbox" className="w-4 h-4 cursor-pointer" />
                                   </div>
                                   <table className="w-full border-collapse">
@@ -1550,7 +1592,7 @@ export default function Listas() {
                                         <th className={`border border-gray-900 ${getPaddingClass()} ${getFontWeightClass()} text-left align-middle ${getFontSizeClass()} text-gray-900 break-words`}>DATA</th>
                                         <th className={`border border-gray-900 ${getPaddingClass()} ${getFontWeightClass()} text-left align-middle ${getFontSizeClass()} text-gray-900 break-words`}>HORA</th>
                                         <th className={`border border-gray-900 ${getPaddingClass()} ${getFontWeightClass()} text-left align-middle ${getFontSizeClass()} text-gray-900 break-words`}>LOCALIDADE</th>
-                                        {tipo !== 'Reuniões' && <th className={`border border-gray-900 ${getPaddingClass()} ${getFontWeightClass()} text-left align-middle ${getFontSizeClass()} text-gray-900 break-words`}>{tipo === 'Reunião Ministerial' ? 'PARTICIPAM' : 'ANCIÃO'}</th>}
+                                        {tipo !== 'Reuniões' && <th className={`border border-gray-900 ${getPaddingClass()} ${getFontWeightClass()} text-left align-middle ${getFontSizeClass()} text-gray-900 break-words`}>{(tipo === 'Reunião Ministerial' || tipo === 'Reunião Extra') ? 'PARTICIPAM' : (tipo === 'Reunião para Mocidade' || tipo === 'RJM com Busca dos Dons' || tipo === 'Culto para Jovens') ? 'IRMÃO' : 'ANCIÃO'}</th>}
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -1566,9 +1608,11 @@ export default function Listas() {
                                             <td className={`border border-gray-900 ${getPaddingClass()} ${getFontSizeClass()} text-left align-middle text-gray-900 break-words`}>{getCongregacaoNome(e.congregacaoId) || '-'}</td>
                                             {tipo !== 'Reuniões' && (
                                               <td className={`border border-gray-900 ${getPaddingClass()} ${getFontSizeClass()} text-left align-middle text-gray-900 break-words`}>
-                                                {tipo === 'Reunião Ministerial' 
-                                                  ? (e.descricao ? e.descricao : '-')
-                                                  : (reduzirNome(e.anciaoAtende) ? reduzirNome(e.anciaoAtende) : '-')
+                                                {(tipo === 'Reunião Ministerial' || tipo === 'Reunião Extra')
+                                                  ? (listaEditando?.participamOverrides?.[e.id] ?? (tipo === 'Reunião Ministerial' ? (e.descricao || '-') : (e.anciaoAtende || '-')))
+                                                  : (tipo === 'Reunião para Mocidade' || tipo === 'RJM com Busca dos Dons' || tipo === 'Culto para Jovens')
+                                                    ? (listaEditando?.participamOverrides?.[e.id] ?? (reduzirNome(e.anciaoAtende) || '-'))
+                                                    : (reduzirNome(e.anciaoAtende) ? reduzirNome(e.anciaoAtende) : '-')
                                                 }
                                               </td>
                                             )}
@@ -1584,9 +1628,9 @@ export default function Listas() {
                             // Renderizar REFORÇOS
                             if (reforcosFiltered.length > 0) {
                               return (
-                                <div key={`reforco-${tipo}`} className="lista-section space-y-1">
-                                  <div className="flex items-center justify-between pb-1 border-b border-gray-900">
-                                    <h5 className="font-bold text-sm text-gray-900 uppercase">REFORÇO - {getDisplayName(tipo)}</h5>
+                                <div key={`reforco-${tipo}`} className="lista-section space-y-1 mt-2">
+                                  <div className="flex items-center justify-between py-1 px-1.5 bg-gray-200 border border-gray-900 rounded-sm">
+                                    <h5 className="font-bold text-sm text-gray-900 uppercase tracking-wide">REFORÇO — {getDisplayName(tipo)}</h5>
                                     <input type="checkbox" className="w-4 h-4 cursor-pointer" />
                                   </div>
                                   <table className="w-full border-collapse">
@@ -1631,9 +1675,9 @@ export default function Listas() {
                             // Renderizar ENSAIOS REGIONAIS
                             if (ensaiosFiltered.length > 0) {
                               return (
-                                <div key={`ensaio-${tipo}`} className="lista-section space-y-1">
-                                  <div className="flex items-center justify-between pb-1 border-b border-gray-900">
-                                    <h5 className="font-bold text-sm text-gray-900 uppercase">{getDisplayName(tipo)}</h5>
+                                <div key={`ensaio-${tipo}`} className="lista-section space-y-1 mt-2">
+                                  <div className="flex items-center justify-between py-1 px-1.5 bg-gray-200 border border-gray-900 rounded-sm">
+                                    <h5 className="font-bold text-sm text-gray-900 uppercase tracking-wide">{getDisplayName(tipo)}</h5>
                                     <input type="checkbox" className="w-4 h-4 cursor-pointer" />
                                   </div>
                                   <table className="w-full border-collapse">
@@ -1686,9 +1730,9 @@ export default function Listas() {
 
                     {/* RODAPÉ: AVISOS */}
                     {listaEditando?.avisos && listaEditando.avisos.filter(a => a.mostrarNoPreview !== false).length > 0 && (
-                      <div className="lista-section space-y-2">
-                        <div className="flex items-center justify-between pb-1 border-b border-gray-900">
-                          <h5 className={`font-bold ${getFontSizeClass()} text-gray-900 uppercase`}>AVISOS</h5>
+                      <div className="lista-section space-y-2 mt-2">
+                        <div className="flex items-center justify-between py-1 px-1.5 bg-gray-200 border border-gray-900 rounded-sm">
+                          <h5 className={`font-bold ${getFontSizeClass()} text-gray-900 uppercase tracking-wide`}>AVISOS</h5>
                           <input type="checkbox" className="w-4 h-4 cursor-pointer" />
                         </div>
                         <table className="w-full border-collapse">

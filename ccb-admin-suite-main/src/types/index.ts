@@ -76,6 +76,16 @@ export interface Evento {
   diaconoResponsavel?: string; // Nome do diácono responsável
   diaconoAuxiliar?: string; // Nome do diácono auxiliar
   responsavelContagem?: string; // Responsável pela contagem
+  // Campos para Batismo/Santa Ceia/Reuniões de Jovens — Irmão que Atende
+  irmaoAtende?: string;
+  // Campos para Ordenação
+  nomeServo?: string;
+  ministerioOrdenacao?: string; // 'Ancião' | 'Diácono'
+  anciaoOrdena?: string;
+  // Campos para Apresentação de Novos Obreiros
+  nomeObreiro?: string;
+  ministerioObreiro?: string;
+  anciaoApresenta?: string;
 }
 
 export interface Reforco {
@@ -125,6 +135,8 @@ export interface ResultadoBatismo {
   congregacaoId: string;
   irmaos: number;
   irmas: number;
+  anciaoNome?: string;
+  anciaoLocalidade?: string;
   observacoes?: string;
 }
 
@@ -134,6 +146,9 @@ export interface ResultadoSantaCeia {
   congregacaoId: string;
   irmaos: number;
   irmas: number;
+  anciaoNome?: string;
+  anciaoLocalidade?: string;
+  diaconoNome?: string;
   observacoes?: string;
 }
 
@@ -204,4 +219,58 @@ export interface Lista {
   ordenacaoEventos?: { [tipo: string]: number };
   estiloConfig?: ConfiguracaoEstilo;
   eventOrder?: string[];
+  participamOverrides?: { [eventoId: string]: string };
+}
+
+// ─── EVANGELIZAÇÃO ───────────────────────────────────────────────────────────
+
+export type FuncaoEvangelizacao = 'Responsável' | 'Auxiliar' | 'Cooperador' | 'Visitante';
+
+export interface MembroEvangelizacao {
+  id: string;
+  nome: string;
+  funcao: FuncaoEvangelizacao;
+  telefone?: string;
+  ativo: boolean;
+}
+
+export type StatusAtendimento = 'Agendado' | 'Realizado' | 'Cancelado';
+
+export interface AtendimentoEvangelizacao {
+  id: string;
+  data: string;
+  horario?: string;
+  local?: string;
+  responsavelNome: string;
+  interessadoNome: string;
+  observacoes?: string;
+  status: StatusAtendimento;
+}
+
+export interface ReuniaoEvangelizacao {
+  id: string;
+  data: string;
+  horario?: string;
+  local?: string;
+  descricao?: string;
+  participantes: string[]; // IDs de MembroEvangelizacao
+  observacoes?: string;
+}
+
+// ─── TESOURARIA - COLETAS ────────────────────────────────────────────────────
+
+export interface ColetaLinha {
+  congregacao: string;
+  cidade: string;
+  [key: string]: string | number;
+}
+
+export interface ColetaUpload {
+  id: string;
+  descricao: string;
+  dataReferencia: string;
+  uploadedAt: string;
+  colunas: string[];
+  colunasValor: string[];
+  linhas: ColetaLinha[];
 }

@@ -16,6 +16,10 @@ import Resultados from "./pages/Resultados";
 import Listas from "./pages/Listas";
 import NotFound from "./pages/NotFound";
 
+import Evangelizacao from "./pages/Evangelizacao";
+import Estatisticas from "./pages/Estatisticas";
+import Administracao from "./pages/Administracao";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -23,7 +27,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter basename={import.meta.env.PROD ? "/ccb-admin-suite" : ""}>
+      <BrowserRouter basename="">
         <Layout>
           <Routes>
             <Route path="/" element={<Index />} />
@@ -36,6 +40,9 @@ const App = () => (
             <Route path="/relatorios" element={<Relatorios />} />
             <Route path="/resultados" element={<Resultados />} />
             <Route path="/listas" element={<Listas />} />
+            <Route path="/evangelizacao" element={<Evangelizacao />} />
+            <Route path="/estatisticas" element={<Estatisticas />} />
+            <Route path="/administracao" element={<Administracao />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>

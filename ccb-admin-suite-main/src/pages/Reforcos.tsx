@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { Plus, Trash2, ShieldCheck, AlertCircle, Edit2 } from 'lucide-react';
+import { Plus, Trash2, ShieldCheck, AlertCircle, Edit2, RotateCcw, Upload, Download, CheckCircle2, Printer, FileSpreadsheet, FileText, Eye, X } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import { useReforcos, useCongregacoes, useMembros } from '@/hooks/useData';
-import { Reforco, TipoMinisterio } from '@/types';
+import { Reforco, TipoMinisterio, Congregacao } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,6 +27,124 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
+type RodizioItem = {
+  congregacaoId: string;
+  mes: number;
+  ano: number;
+  membroId: string;
+  tipo: 'Culto';
+};
+
+type RodizioGerado = {
+  ano: number;
+  meses: number[];
+  geradoEm: string;
+  items: RodizioItem[];
+};
+
+function ultimaDataCultoNoMes(cong: Congregacao, ano: number, mes: number): string | null {
+  const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+  const diasCultoIndices = (cong.diasCultos || [])
+    .map((d) => diasSemana.indexOf(d.diasemana))
+    .filter((i) => i >= 0);
+  if (diasCultoIndices.length === 0) diasCultoIndices.push(0); // fallback: domingo
+  // Cultos marcados no máximo até o dia 20 do mês
+  for (let dia = 20; dia >= 1; dia--) {
+    const date = new Date(ano, mes - 1, dia);
+    if (diasCultoIndices.includes(date.getDay())) {
+      return `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+    }
+  }
+  return null;
+}
+
+function gerarRodizioFn(
+  congregacoesLista: Congregacao[],
+  membroIds: string[],
+  ano: number,
+  meses: number[]
+): RodizioGerado {
+  const items: RodizioItem[] = [];
+  const mesesOrdenados = [...meses].sort((a, b) => a - b);
+  for (const mes of mesesOrdenados) {
+    const membrosEmbaralhados = [...membroIds].sort(() => Math.random() - 0.5);
+    congregacoesLista.forEach((cong, idx) => {
+      items.push({
+        congregacaoId: cong.id,
+        mes,
+        ano,
+        membroId: membrosEmbaralhados[idx % membrosEmbaralhados.length],
+        tipo: 'Culto',
+      });
+    });
+  }
+  return { ano, meses: mesesOrdenados, geradoEm: new Date().toISOString(), items };
+}
+
+const NOMES_MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+type MembroSimples = { id: string; nome: string };
+type CongSimples = { id: string; nome: string };
+
+function exportarRodizioXLSX(rodizio: RodizioGerado, congsLista: CongSimples[], membrosLista: MembroSimples[]) {
+  const rows: (string | number)[][] = [['Mês', 'Congregação', 'Irmão']];
+  for (const item of rodizio.items) {
+    const cong = congsLista.find((c) => c.id === item.congregacaoId);
+    const membro = membrosLista.find((m) => m.id === item.membroId);
+    rows.push([`${NOMES_MESES[item.mes - 1]}/${item.ano}`, cong?.nome || item.congregacaoId, membro?.nome || item.membroId]);
+  }
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{ wch: 18 }, { wch: 35 }, { wch: 30 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Rodízio');
+  XLSX.writeFile(wb, `rodizio-${rodizio.ano}.xlsx`);
+}
+
+function exportarRodizioPDF(rodizio: RodizioGerado, congsLista: CongSimples[], membrosLista: MembroSimples[]) {
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text(`Rodízio de Reforços — ${rodizio.ano}`, 14, 16);
+  doc.setFontSize(10);
+  doc.text(`Gerado em: ${new Date(rodizio.geradoEm).toLocaleDateString('pt-BR')}`, 14, 24);
+  const body = rodizio.items.map((item) => {
+    const cong = congsLista.find((c) => c.id === item.congregacaoId);
+    const membro = membrosLista.find((m) => m.id === item.membroId);
+    return [`${NOMES_MESES[item.mes - 1]}/${item.ano}`, cong?.nome || item.congregacaoId, membro?.nome || item.membroId];
+  });
+  autoTable(doc, {
+    head: [['Mês', 'Congregação', 'Irmão']],
+    body,
+    startY: 30,
+    styles: { fontSize: 9 },
+    headStyles: { fillColor: [41, 128, 185] },
+    alternateRowStyles: { fillColor: [245, 245, 245] },
+  });
+  doc.save(`rodizio-${rodizio.ano}.pdf`);
+}
+
+function imprimirRodizio(rodizio: RodizioGerado, congsLista: CongSimples[], membrosLista: MembroSimples[]) {
+  const rows = rodizio.items.map((item) => {
+    const cong = congsLista.find((c) => c.id === item.congregacaoId);
+    const membro = membrosLista.find((m) => m.id === item.membroId);
+    return `<tr><td>${NOMES_MESES[item.mes - 1]}/${item.ano}</td><td>${cong?.nome || ''}</td><td>${membro?.nome || ''}</td></tr>`;
+  }).join('');
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+    <title>Rodízio de Reforços — ${rodizio.ano}</title>
+    <style>body{font-family:Arial,sans-serif;padding:20px}h2{margin-bottom:4px}p{margin:0 0 16px;font-size:12px;color:#666}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    th{background:#2980b9;color:#fff;padding:8px;text-align:left}
+    td{padding:6px 8px;border-bottom:1px solid #eee}tr:nth-child(even) td{background:#f5f5f5}</style>
+  </head><body>
+    <h2>Rodízio de Reforços — ${rodizio.ano}</h2>
+    <p>Gerado em: ${new Date(rodizio.geradoEm).toLocaleDateString('pt-BR')}</p>
+    <table><thead><tr><th>Mês</th><th>Congregação</th><th>Irmão</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+  </body></html>`;
+  const win = window.open('', '_blank');
+  if (win) { win.document.write(html); win.document.close(); win.focus(); win.print(); }
+}
+
 export default function Reforcos() {
   const { reforcos, adicionar, remover, atualizar } = useReforcos();
   const { congregacoes } = useCongregacoes();
@@ -36,6 +157,8 @@ export default function Reforcos() {
   const [isSaving, setIsSaving] = useState(false);
   const [novoMembroOutraLocalidade, setNovoMembroOutraLocalidade] = useState({ nome: '', localidade: '', ministerio: 'Ancião' as TipoMinisterio });
   const [filterTipo, setFilterTipo] = useState<'Culto' | 'RJM' | 'Todos'>('Todos');
+  const [filterMonth, setFilterMonth] = useState('');
+  const [filterYear, setFilterYear] = useState('');
   const [form, setForm] = useState({
     data: '',
     horario: '',
@@ -46,6 +169,25 @@ export default function Reforcos() {
     observacoes: '',
   });
   const [horarioAutoPreenchido, setHorarioAutoPreenchido] = useState(false);
+
+  // Rodízio state
+  const [openRodizio, setOpenRodizio] = useState(false);
+  const [rodizioAno, setRodizioAno] = useState(new Date().getFullYear().toString());
+  const [rodizioMeses, setRodizioMeses] = useState<number[]>([]);
+  const [rodizioMembrosIds, setRodizioMembrosIds] = useState<string[]>([]);
+  const [rodizioGerado, setRodizioGerado] = useState<RodizioGerado | null>(null);
+  const [rodizioStep, setRodizioStep] = useState<'config' | 'preview' | 'resultado'>('config');
+
+  // Importar rodízio state
+  const [openImportarRodizio, setOpenImportarRodizio] = useState(false);
+  const [rodizioImportado, setRodizioImportado] = useState<RodizioGerado | null>(null);
+  const [rodizioImportStep, setRodizioImportStep] = useState<'import' | 'preview' | 'resultado'>('import');
+  const [aplicandoRodizio, setAplicandoRodizio] = useState(false);
+  const [resultadoAplicacao, setResultadoAplicacao] = useState<{ criados: number; ignorados: number; semData: number } | null>(null);
+
+  // Estado para editar/visualizar item do rodízio
+  const [editingRodizioIdx, setEditingRodizioIdx] = useState<{ globalIdx: number; membroId: string } | null>(null);
+  const [viewingRodizioItem, setViewingRodizioItem] = useState<RodizioItem | null>(null);
 
   const toggleMembro = (id: string) => {
     setForm((f) => ({
@@ -220,10 +362,15 @@ export default function Reforcos() {
     ? reforcos 
     : reforcos.filter(r => r.tipo === filterTipo);
 
+  const availableYears = [...new Set(reforcos.map((r) => r.data.slice(0, 4)))].sort();
+
   // Filtrar apenas reforços com data futura ou de hoje (excluir os já realizados)
   const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
   const reforçosAtivos = reforcosFiltrados.filter(r => {
-    return r.data >= today; // Comparação de strings funciona com formato ISO
+    if (filterYear && r.data.slice(0, 4) !== filterYear) return false;
+    if (filterMonth && r.data.slice(5, 7) !== filterMonth.padStart(2, '0')) return false;
+    if (!filterYear && !filterMonth) return r.data >= today;
+    return true;
   });
 
   // Ordenar reforços por data e depois por congregação
@@ -234,6 +381,139 @@ export default function Reforcos() {
       return getCongNome(a.congregacaoId).localeCompare(getCongNome(b.congregacaoId), 'pt-BR');
     });
 
+  const toggleRodizioMes= (mes: number) => {
+    setRodizioMeses((prev) => prev.includes(mes) ? prev.filter((m) => m !== mes) : [...prev, mes]);
+  };
+
+  const toggleRodizioMembro = (id: string) => {
+    setRodizioMembrosIds((prev) => prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]);
+  };
+
+  const handleGerarRodizio = () => {
+    if (rodizioMeses.length === 0 || rodizioMembrosIds.length === 0) return;
+    const gerado = gerarRodizioFn(
+      [...congregacoes].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')),
+      rodizioMembrosIds,
+      parseInt(rodizioAno),
+      rodizioMeses
+    );
+    setRodizioGerado(gerado);
+    setRodizioStep('preview');
+  };
+
+  // Encontra o índice global de um item pelo mes+congregacaoId (para editar/excluir)
+  const getGlobalIdx = (source: RodizioGerado, mes: number, congId: string) =>
+    source.items.findIndex((it) => it.mes === mes && it.congregacaoId === congId);
+
+  const handleEditarItemRodizio = (source: RodizioGerado, globalIdx: number) => {
+    setEditingRodizioIdx({ globalIdx, membroId: source.items[globalIdx].membroId });
+  };
+
+  const handleSalvarEdicaoItem = (
+    source: RodizioGerado,
+    setter: (r: RodizioGerado) => void,
+    globalIdx: number,
+    novoMembroId: string
+  ) => {
+    const novosItems = source.items.map((it, i) => i === globalIdx ? { ...it, membroId: novoMembroId } : it);
+    setter({ ...source, items: novosItems });
+    setEditingRodizioIdx(null);
+  };
+
+  const handleExcluirItemRodizio = (
+    source: RodizioGerado,
+    setter: (r: RodizioGerado) => void,
+    globalIdx: number
+  ) => {
+    const novosItems = source.items.filter((_, i) => i !== globalIdx);
+    const mesesRestantes = [...new Set(novosItems.map((it) => it.mes))].sort((a, b) => a - b);
+    setter({ ...source, items: novosItems, meses: mesesRestantes });
+  };
+
+  const handleExportarRodizio = (rodizio: RodizioGerado) => {
+    const json = JSON.stringify(rodizio, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `rodizio-${rodizio.ano}-meses-${rodizio.meses.join('-')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportarRodizioFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target?.result as string) as RodizioGerado;
+        if (data.items && Array.isArray(data.items)) {
+          setRodizioImportado(data);
+          setResultadoAplicacao(null);
+        } else {
+          alert('Arquivo inválido: estrutura de rodízio não reconhecida.');
+        }
+      } catch {
+        alert('Arquivo inválido. Selecione um arquivo JSON de rodízio exportado pelo sistema.');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const handleAplicarRodizio = async (rodizio: RodizioGerado) => {
+    setAplicandoRodizio(true);
+    let criados = 0;
+    let ignorados = 0;
+    let semData = 0;
+
+    for (const item of rodizio.items) {
+      const jaExiste = reforcos.some((r) => {
+        const d = new Date(r.data + 'T12:00:00');
+        return (
+          r.congregacaoId === item.congregacaoId &&
+          d.getMonth() + 1 === item.mes &&
+          d.getFullYear() === item.ano &&
+          r.tipo === item.tipo
+        );
+      });
+
+      if (jaExiste) {
+        ignorados++;
+        continue;
+      }
+
+      const cong = congregacoes.find((c) => c.id === item.congregacaoId);
+      if (!cong) continue;
+
+      const data = ultimaDataCultoNoMes(cong, item.ano, item.mes);
+      if (!data) {
+        semData++;
+        continue;
+      }
+
+      const diaSemanaStr = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'][
+        new Date(data + 'T12:00:00').getDay()
+      ];
+      const diaEncontrado = (cong.diasCultos || []).find((d) => d.diasemana === diaSemanaStr);
+
+      await adicionar({
+        data,
+        horario: diaEncontrado?.horario || '',
+        tipo: item.tipo,
+        congregacaoId: item.congregacaoId,
+        membros: [item.membroId],
+        membrosOutrasLocalidades: [],
+        observacoes: 'Criado por Rodízio',
+      });
+      criados++;
+    }
+
+    setAplicandoRodizio(false);
+    setResultadoAplicacao({ criados, ignorados, semData });
+  };
+
   return (
     <div className="flex flex-col lg:flex-row gap-6">
       <div className="flex-1 space-y-6">
@@ -242,6 +522,13 @@ export default function Reforcos() {
             <h1 className="text-2xl font-bold font-display text-foreground">Reforços</h1>
             <p className="text-sm text-muted-foreground mt-1">Agendar atendimentos de cultos e RJM</p>
           </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" className="gap-2" onClick={() => { setOpenRodizio(true); setRodizioStep('config'); setRodizioGerado(null); setResultadoAplicacao(null); }}>
+              <RotateCcw className="h-4 w-4" /> Rodízio
+            </Button>
+            <Button variant="outline" className="gap-2" onClick={() => { setOpenImportarRodizio(true); setRodizioImportado(null); setRodizioImportStep('import'); setResultadoAplicacao(null); }}>
+              <Upload className="h-4 w-4" /> Importar Rodízio
+            </Button>
           <Dialog open={open} onOpenChange={(isOpen) => {
             setOpen(isOpen);
             if (!isOpen) {
@@ -519,10 +806,11 @@ export default function Reforcos() {
               </form>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
 
         {/* Filtros */}
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
           {(['Todos', 'Culto', 'RJM'] as const).map((tipo) => (
               <button
                 key={tipo}
@@ -536,6 +824,49 @@ export default function Reforcos() {
               {tipo}
             </button>
           ))}
+          <Select value={filterYear || 'all'} onValueChange={(v) => setFilterYear(v === 'all' ? '' : v)}>
+            <SelectTrigger className="w-32 h-9">
+              <SelectValue placeholder="Ano" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os anos</SelectItem>
+              {availableYears.map((y) => (
+                <SelectItem key={y} value={y}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={filterMonth || 'all'} onValueChange={(v) => setFilterMonth(v === 'all' ? '' : v)}>
+            <SelectTrigger className="w-40 h-9">
+              <SelectValue placeholder="Mês" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os meses</SelectItem>
+              {[
+                { value: '1', label: 'Janeiro' },
+                { value: '2', label: 'Fevereiro' },
+                { value: '3', label: 'Março' },
+                { value: '4', label: 'Abril' },
+                { value: '5', label: 'Maio' },
+                { value: '6', label: 'Junho' },
+                { value: '7', label: 'Julho' },
+                { value: '8', label: 'Agosto' },
+                { value: '9', label: 'Setembro' },
+                { value: '10', label: 'Outubro' },
+                { value: '11', label: 'Novembro' },
+                { value: '12', label: 'Dezembro' },
+              ].map((m) => (
+                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {(filterYear || filterMonth) && (
+            <button
+              onClick={() => { setFilterYear(''); setFilterMonth(''); }}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors underline"
+            >
+              Limpar filtros
+            </button>
+          )}
         </div>
 
         {reforçosOrdenados.length === 0 ? (
@@ -597,6 +928,392 @@ export default function Reforcos() {
           </div>
         )}
       </div>
+
+      {/* Dialog Rodízio */}
+      <Dialog open={openRodizio} onOpenChange={(isOpen) => {
+        setOpenRodizio(isOpen);
+        if (!isOpen) { setRodizioStep('config'); setRodizioGerado(null); setResultadoAplicacao(null); }
+      }}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <RotateCcw className="h-5 w-5" /> Rodízio de Reforços
+            </DialogTitle>
+          </DialogHeader>
+
+          {rodizioStep === 'config' && (
+            <div className="space-y-4">
+              <div>
+                <Label>Ano</Label>
+                <Input
+                  type="number"
+                  value={rodizioAno}
+                  onChange={(e) => setRodizioAno(e.target.value)}
+                  min="2020"
+                  max="2099"
+                  className="w-32 mt-1"
+                />
+              </div>
+              <div>
+                <Label className="mb-2 block">Meses</Label>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {NOMES_MESES.map((nome, idx) => (
+                    <label key={idx + 1} className="flex items-center gap-2 text-sm cursor-pointer p-2 rounded border border-border hover:bg-muted/30 transition-colors">
+                      <Checkbox checked={rodizioMeses.includes(idx + 1)} onCheckedChange={() => toggleRodizioMes(idx + 1)} />
+                      <span>{nome.slice(0, 3)}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <Label className="mb-2 block">
+                  Irmãos participantes{rodizioMembrosIds.length > 0 ? ` (${rodizioMembrosIds.length} selecionados)` : ''}
+                </Label>
+                {membros.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum irmão cadastrado no sistema.</p>
+                ) : (
+                  <div className="max-h-48 overflow-y-auto border border-border rounded-lg p-2 space-y-1">
+                    {[...membros].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')).map((m) => (
+                      <label key={m.id} className="flex items-center gap-2 text-sm cursor-pointer p-1 rounded hover:bg-muted/30 transition-colors">
+                        <Checkbox checked={rodizioMembrosIds.includes(m.id)} onCheckedChange={() => toggleRodizioMembro(m.id)} />
+                        <span className="text-foreground">{m.nome}</span>
+                        <span className="text-muted-foreground text-xs">({m.ministerio})</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleGerarRodizio}
+                  disabled={rodizioMeses.length === 0 || rodizioMembrosIds.length === 0}
+                  className="gap-2"
+                >
+                  <RotateCcw className="h-4 w-4" /> Gerar Rodízio
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {rodizioStep === 'preview' && rodizioGerado && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <p className="text-sm text-muted-foreground">
+                  {rodizioGerado.items.length} atribuições · {congregacoes.length} congregações · {rodizioGerado.meses.length} mes(es)
+                </p>
+                <Button variant="outline" size="sm" onClick={() => setRodizioStep('config')}>
+                  ← Reconfigurar
+                </Button>
+              </div>
+              <div className="max-h-72 overflow-y-auto space-y-4 pr-1">
+                {rodizioGerado.meses.map((mes) => (
+                  <div key={mes}>
+                    <h3 className="font-semibold text-sm mb-2 sticky top-0 bg-background py-1">
+                      {NOMES_MESES[mes - 1]} / {rodizioGerado.ano}
+                    </h3>
+                    <div className="space-y-1">
+                      {rodizioGerado.items
+                        .filter((item) => item.mes === mes)
+                        .map((item) => {
+                          const cong = congregacoes.find((c) => c.id === item.congregacaoId);
+                          const membro = membros.find((m) => m.id === item.membroId);
+                          const globalIdx = getGlobalIdx(rodizioGerado, mes, item.congregacaoId);
+                          const isEditing = editingRodizioIdx?.globalIdx === globalIdx;
+                          return (
+                            <div key={globalIdx} className="flex items-center justify-between text-sm p-2 rounded bg-muted/30 gap-2">
+                              <span className="text-foreground truncate flex-1 min-w-0">{cong?.nome || '—'}</span>
+                              {isEditing ? (
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <select
+                                    className="text-xs border border-border rounded px-1 py-0.5 bg-background text-foreground"
+                                    value={editingRodizioIdx.membroId}
+                                    onChange={(e) => setEditingRodizioIdx({ globalIdx, membroId: e.target.value })}
+                                  >
+                                    {[...membros].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')).map((m) => (
+                                      <option key={m.id} value={m.id}>{m.nome}</option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    onClick={() => handleSalvarEdicaoItem(rodizioGerado, setRodizioGerado, globalIdx, editingRodizioIdx.membroId)}
+                                    className="text-xs text-primary font-medium hover:underline px-1"
+                                  >✓</button>
+                                  <button onClick={() => setEditingRodizioIdx(null)} className="text-xs text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <span className="text-primary font-medium text-xs">{membro?.nome || '—'}</span>
+                                  <button
+                                    title="Visualizar"
+                                    onClick={() => setViewingRodizioItem(item)}
+                                    className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                                  ><Eye className="h-3.5 w-3.5" /></button>
+                                  <button
+                                    title="Editar"
+                                    onClick={() => handleEditarItemRodizio(rodizioGerado, globalIdx)}
+                                    className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                                  ><Edit2 className="h-3.5 w-3.5" /></button>
+                                  <button
+                                    title="Excluir"
+                                    onClick={() => handleExcluirItemRodizio(rodizioGerado, setRodizioGerado, globalIdx)}
+                                    className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                                  ><Trash2 className="h-3.5 w-3.5" /></button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 justify-end flex-wrap">
+                <Button variant="outline" className="gap-2" onClick={() => imprimirRodizio(rodizioGerado, congregacoes, membros)}>
+                  <Printer className="h-4 w-4" /> Imprimir
+                </Button>
+                <Button variant="outline" className="gap-2" onClick={() => exportarRodizioXLSX(rodizioGerado, congregacoes, membros)}>
+                  <FileSpreadsheet className="h-4 w-4" /> XLSX
+                </Button>
+                <Button variant="outline" className="gap-2" onClick={() => exportarRodizioPDF(rodizioGerado, congregacoes, membros)}>
+                  <FileText className="h-4 w-4" /> PDF
+                </Button>
+                <Button variant="outline" className="gap-2" onClick={() => handleExportarRodizio(rodizioGerado)}>
+                  <Download className="h-4 w-4" /> Exportar JSON
+                </Button>
+                <Button
+                  className="gap-2"
+                  disabled={aplicandoRodizio}
+                  onClick={async () => {
+                    await handleAplicarRodizio(rodizioGerado);
+                    setRodizioStep('resultado');
+                  }}
+                >
+                  {aplicandoRodizio ? 'Aplicando...' : <><CheckCircle2 className="h-4 w-4" /> Aplicar Rodízio</>}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {rodizioStep === 'resultado' && resultadoAplicacao && (
+            <div className="space-y-4">
+              <div className="p-4 bg-primary/10 rounded-lg space-y-2">
+                <p className="font-semibold text-foreground flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-primary" /> Rodízio aplicado com sucesso!
+                </p>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>✅ {resultadoAplicacao.criados} reforço(s) criado(s)</li>
+                  <li>⏭️ {resultadoAplicacao.ignorados} congregação(ões) já tinham reforço agendado (ignorado)</li>
+                  {resultadoAplicacao.semData > 0 && (
+                    <li>⚠️ {resultadoAplicacao.semData} congregação(ões) sem data de culto configurada</li>
+                  )}
+                </ul>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => { setRodizioStep('config'); setRodizioGerado(null); setResultadoAplicacao(null); }}>
+                  Novo Rodízio
+                </Button>
+                <Button onClick={() => setOpenRodizio(false)}>Fechar</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Importar Rodízio */}
+      <Dialog open={openImportarRodizio} onOpenChange={(isOpen) => {
+        setOpenImportarRodizio(isOpen);
+        if (!isOpen) { setRodizioImportado(null); setRodizioImportStep('import'); setResultadoAplicacao(null); }
+      }}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="font-display flex items-center gap-2">
+              <Upload className="h-5 w-5" /> Importar Rodízio
+            </DialogTitle>
+          </DialogHeader>
+
+          {rodizioImportStep === 'import' && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Selecione um arquivo JSON de rodízio exportado anteriormente pelo sistema.
+              </p>
+              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center space-y-3">
+                <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Clique para selecionar o arquivo</p>
+                <label htmlFor="rodizio-file-input">
+                  <span className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 cursor-pointer transition-colors">
+                    Selecionar arquivo JSON
+                  </span>
+                </label>
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={handleImportarRodizioFile}
+                  className="sr-only"
+                  id="rodizio-file-input"
+                />
+              </div>
+              {rodizioImportado && (
+                <>
+                  <Alert>
+                    <CheckCircle2 className="h-4 w-4" />
+                    <AlertDescription>
+                      Arquivo carregado: <strong>{rodizioImportado.items.length} atribuições</strong> para{' '}
+                      <strong>{rodizioImportado.meses.length} meses</strong> de {rodizioImportado.ano}
+                    </AlertDescription>
+                  </Alert>
+                  <div className="flex justify-end">
+                    <Button onClick={() => setRodizioImportStep('preview')} className="gap-2">
+                      Visualizar → Aplicar
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {rodizioImportStep === 'preview' && rodizioImportado && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <p className="text-sm text-muted-foreground">
+                  {rodizioImportado.items.length} atribuições · {rodizioImportado.meses.length} mes(es) de {rodizioImportado.ano}
+                </p>
+                <Button variant="outline" size="sm" onClick={() => setRodizioImportStep('import')}>
+                  ← Voltar
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Itens em amarelo já possuem reforço agendado e serão ignorados ao aplicar.
+              </p>
+              <div className="max-h-72 overflow-y-auto space-y-4 pr-1">
+                {rodizioImportado.meses.map((mes) => (
+                  <div key={mes}>
+                    <h3 className="font-semibold text-sm mb-2 sticky top-0 bg-background py-1">
+                      {NOMES_MESES[mes - 1]} / {rodizioImportado.ano}
+                    </h3>
+                    <div className="space-y-1">
+                      {rodizioImportado.items
+                        .filter((item) => item.mes === mes)
+                        .map((item) => {
+                          const cong = congregacoes.find((c) => c.id === item.congregacaoId);
+                          const membro = membros.find((m) => m.id === item.membroId);
+                          const globalIdx = getGlobalIdx(rodizioImportado, mes, item.congregacaoId);
+                          const isEditing = editingRodizioIdx?.globalIdx === globalIdx;
+                          const jaTemReforco = reforcos.some((r) => {
+                            const d = new Date(r.data + 'T12:00:00');
+                            return (
+                              r.congregacaoId === item.congregacaoId &&
+                              d.getMonth() + 1 === item.mes &&
+                              d.getFullYear() === item.ano &&
+                              r.tipo === item.tipo
+                            );
+                          });
+                          return (
+                            <div
+                              key={globalIdx}
+                              className={`flex items-center justify-between text-sm p-2 rounded gap-2 ${
+                                jaTemReforco
+                                  ? 'bg-yellow-50 dark:bg-yellow-900/20 opacity-70'
+                                  : 'bg-muted/30'
+                              }`}
+                            >
+                              <span className="text-foreground truncate flex-1 min-w-0">
+                                {cong?.nome || item.congregacaoId}
+                              </span>
+                              {isEditing ? (
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <select
+                                    className="text-xs border border-border rounded px-1 py-0.5 bg-background text-foreground"
+                                    value={editingRodizioIdx.membroId}
+                                    onChange={(e) => setEditingRodizioIdx({ globalIdx, membroId: e.target.value })}
+                                  >
+                                    {[...membros].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')).map((m) => (
+                                      <option key={m.id} value={m.id}>{m.nome}</option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    onClick={() => handleSalvarEdicaoItem(rodizioImportado, setRodizioImportado, globalIdx, editingRodizioIdx.membroId)}
+                                    className="text-xs text-primary font-medium hover:underline px-1"
+                                  >✓</button>
+                                  <button onClick={() => setEditingRodizioIdx(null)} className="text-xs text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  <span className="text-primary font-medium text-xs">
+                                    {membro?.nome || item.membroId}
+                                  </span>
+                                  {jaTemReforco && (
+                                    <Badge variant="outline" className="text-xs text-yellow-600 border-yellow-400">
+                                      já agendado
+                                    </Badge>
+                                  )}
+                                  <button
+                                    title="Visualizar"
+                                    onClick={() => setViewingRodizioItem(item)}
+                                    className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                                  ><Eye className="h-3.5 w-3.5" /></button>
+                                  <button
+                                    title="Editar"
+                                    onClick={() => handleEditarItemRodizio(rodizioImportado, globalIdx)}
+                                    className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                                  ><Edit2 className="h-3.5 w-3.5" /></button>
+                                  <button
+                                    title="Excluir"
+                                    onClick={() => handleExcluirItemRodizio(rodizioImportado, setRodizioImportado, globalIdx)}
+                                    className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
+                                  ><Trash2 className="h-3.5 w-3.5" /></button>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2 justify-end flex-wrap">
+                <Button variant="outline" className="gap-2" onClick={() => imprimirRodizio(rodizioImportado, congregacoes, membros)}>
+                  <Printer className="h-4 w-4" /> Imprimir
+                </Button>
+                <Button variant="outline" className="gap-2" onClick={() => exportarRodizioXLSX(rodizioImportado, congregacoes, membros)}>
+                  <FileSpreadsheet className="h-4 w-4" /> XLSX
+                </Button>
+                <Button variant="outline" className="gap-2" onClick={() => exportarRodizioPDF(rodizioImportado, congregacoes, membros)}>
+                  <FileText className="h-4 w-4" /> PDF
+                </Button>
+                <Button
+                  className="gap-2"
+                  disabled={aplicandoRodizio}
+                  onClick={async () => {
+                    await handleAplicarRodizio(rodizioImportado);
+                    setRodizioImportStep('resultado');
+                  }}
+                >
+                  {aplicandoRodizio ? 'Aplicando...' : <><CheckCircle2 className="h-4 w-4" /> Aplicar Rodízio</>}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {rodizioImportStep === 'resultado' && resultadoAplicacao && (
+            <div className="space-y-4">
+              <div className="p-4 bg-primary/10 rounded-lg space-y-2">
+                <p className="font-semibold text-foreground flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-primary" /> Rodízio aplicado!
+                </p>
+                <ul className="text-sm text-muted-foreground space-y-1">
+                  <li>✅ {resultadoAplicacao.criados} reforço(s) criado(s)</li>
+                  <li>⏭️ {resultadoAplicacao.ignorados} congregação(ões) já tinham reforço agendado (ignorado)</li>
+                  {resultadoAplicacao.semData > 0 && (
+                    <li>⚠️ {resultadoAplicacao.semData} congregação(ões) sem data de culto configurada</li>
+                  )}
+                </ul>
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={() => setOpenImportarRodizio(false)}>Fechar</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Sidebar com tabela de reforços */}
       <div className="w-full lg:w-96">
@@ -664,6 +1381,52 @@ export default function Reforcos() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Dialog: Visualizar item de rodízio */}
+      {viewingRodizioItem && (() => {
+        const cong = congregacoes.find((c) => c.id === viewingRodizioItem.congregacaoId);
+        const membro = membros.find((m) => m.id === viewingRodizioItem.membroId);
+        const dataCulto = cong ? ultimaDataCultoNoMes(viewingRodizioItem.ano, viewingRodizioItem.mes, cong) : null;
+        return (
+          <Dialog open onOpenChange={() => setViewingRodizioItem(null)}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle>Detalhes do Rodízio</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Congregação</span>
+                  <span className="font-medium text-right">{cong?.nome || viewingRodizioItem.congregacaoId}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Irmão</span>
+                  <span className="font-medium text-primary">{membro?.nome || viewingRodizioItem.membroId}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Período</span>
+                  <span className="font-medium">{NOMES_MESES[viewingRodizioItem.mes - 1]} / {viewingRodizioItem.ano}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tipo</span>
+                  <Badge variant="outline">{viewingRodizioItem.tipo}</Badge>
+                </div>
+                {dataCulto && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Data do culto</span>
+                    <span className="font-medium">{dataCulto.toLocaleDateString('pt-BR')}</span>
+                  </div>
+                )}
+                {!dataCulto && (
+                  <p className="text-xs text-muted-foreground italic">Data de culto não configurada para esta congregação.</p>
+                )}
+              </div>
+              <div className="flex justify-end pt-2">
+                <Button variant="outline" onClick={() => setViewingRodizioItem(null)}>Fechar</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        );
+      })()}
     </div>
   );
 }

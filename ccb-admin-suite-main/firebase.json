@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "ccbadmitba",
     "public": "dist",
     "ignore": [
       "firebase.json",

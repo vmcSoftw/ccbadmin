@@ -10,7 +10,7 @@ import {
   orderBy,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Congregacao, Membro, Evento, Reforco, Ensaio, ResultadoBatismo, ResultadoSantaCeia, ResultadoEnsaioRegional, Lista } from '@/types';
+import { Congregacao, Membro, Evento, Reforco, Ensaio, ResultadoBatismo, ResultadoSantaCeia, ResultadoEnsaioRegional, Lista, MembroEvangelizacao, AtendimentoEvangelizacao, ReuniaoEvangelizacao, ColetaUpload } from '@/types';
 
 /**
  * Normaliza dados de Congregacao do formato antigo para o novo
@@ -219,4 +219,28 @@ export function useListas() {
   const { items: listas, loading, adicionar, remover, atualizar } =
     useFirestoreCollection<Lista>('listas');
   return { listas, loading, adicionar, remover, atualizar };
+}
+
+export function useMembrosEvangelizacao() {
+  const { items: membros, loading, adicionar, remover, atualizar } =
+    useFirestoreCollection<MembroEvangelizacao>('evangelizacaoMembros');
+  return { membros, loading, adicionar, remover, atualizar };
+}
+
+export function useAtendimentosEvangelizacao() {
+  const { items: atendimentos, loading, adicionar, remover, atualizar } =
+    useFirestoreCollection<AtendimentoEvangelizacao>('evangelizacaoAtendimentos');
+  return { atendimentos, loading, adicionar, remover, atualizar };
+}
+
+export function useReunioesEvangelizacao() {
+  const { items: reunioes, loading, adicionar, remover, atualizar } =
+    useFirestoreCollection<ReuniaoEvangelizacao>('evangelizacaoReunioes');
+  return { reunioes, loading, adicionar, remover, atualizar };
+}
+
+export function useColetas() {
+  const { items: coletas, loading, adicionar, remover, atualizar } =
+    useFirestoreCollection<ColetaUpload>('coletas');
+  return { coletas, loading, adicionar, remover, atualizar };
 }

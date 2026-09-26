@@ -41,7 +41,10 @@ const tiposReunioes = [
   'Reunião Extra',
   'Culto para Jovens',
   'Ensaio Regional',
-  'Ordenação'
+  'Ordenação',
+  'Reunião de Jovens Agrupada',
+  'Reunião com Jovens Estudantes',
+  'Apresentação de Novos Obreiros'
 ];
 
 // Configuração de aparência para cada tipo de reunião
@@ -136,6 +139,27 @@ const tiposReuniaoConfig: Record<string, {
     gradient: 'from-rose-500/20 to-pink-500/20',
     textColor: 'text-rose-700 dark:text-rose-400',
     borderColor: 'border-rose-300 dark:border-rose-600',
+  },
+  'Reunião de Jovens Agrupada': {
+    icon: Users,
+    gradient: 'from-violet-500/20 to-purple-500/20',
+    textColor: 'text-violet-700 dark:text-violet-400',
+    borderColor: 'border-violet-300 dark:border-violet-600',
+    displayName: 'Reunião de Jovens Agrupada'
+  },
+  'Reunião com Jovens Estudantes': {
+    icon: Users,
+    gradient: 'from-teal-500/20 to-cyan-500/20',
+    textColor: 'text-teal-700 dark:text-teal-400',
+    borderColor: 'border-teal-300 dark:border-teal-600',
+    displayName: 'Reunião com Jovens Estudantes'
+  },
+  'Apresentação de Novos Obreiros': {
+    icon: Scroll,
+    gradient: 'from-amber-500/20 to-yellow-500/20',
+    textColor: 'text-amber-700 dark:text-amber-400',
+    borderColor: 'border-amber-300 dark:border-amber-600',
+    displayName: 'Apresentação de Novos Obreiros'
   }
 };
 
@@ -186,6 +210,13 @@ export default function Agenda() {
     diaconoResponsavel: '',
     diaconoAuxiliar: '',
     responsavelContagem: '',
+    irmaoAtende: '',
+    nomeServo: '',
+    ministerioOrdenacao: '',
+    anciaoOrdena: '',
+    nomeObreiro: '',
+    ministerioObreiro: '',
+    anciaoApresenta: '',
   });
 
   const resetForm = () => {
@@ -203,6 +234,13 @@ export default function Agenda() {
       diaconoResponsavel: '',
       diaconoAuxiliar: '',
       responsavelContagem: '',
+      irmaoAtende: '',
+      nomeServo: '',
+      ministerioOrdenacao: '',
+      anciaoOrdena: '',
+      nomeObreiro: '',
+      ministerioObreiro: '',
+      anciaoApresenta: '',
     });
     setAnciaoOutraLocalidade(false);
     setEncarregadoOutraLocalidade(false);
@@ -240,11 +278,20 @@ export default function Agenda() {
       ...form,
       titulo,
       subtipoReuniao: subtipoReunioes,
-      anciaoAtende: form.anciaoAtende ? getMembroNome(form.anciaoAtende) || form.anciaoAtende : '',
+      anciaoAtende: (subtipoReunioes === 'Batismo' || subtipoReunioes === 'Santa-Ceia')
+        ? (form.irmaoAtende || '')
+        : (form.anciaoAtende ? getMembroNome(form.anciaoAtende) || form.anciaoAtende : ''),
       encarregadoRegional: form.encarregadoRegional ? getMembroNome(form.encarregadoRegional) || form.encarregadoRegional : '',
       diaconoResponsavel: form.diaconoResponsavel ? getMembroNome(form.diaconoResponsavel) || form.diaconoResponsavel : '',
       diaconoAuxiliar: form.diaconoAuxiliar ? getMembroNome(form.diaconoAuxiliar) || form.diaconoAuxiliar : '',
       responsavelContagem: form.responsavelContagem ? getMembroNome(form.responsavelContagem) || form.responsavelContagem : '',
+      irmaoAtende: form.irmaoAtende || '',
+      nomeServo: form.nomeServo || '',
+      ministerioOrdenacao: form.ministerioOrdenacao || '',
+      anciaoOrdena: form.anciaoOrdena ? getMembroNome(form.anciaoOrdena) || form.anciaoOrdena : '',
+      nomeObreiro: form.nomeObreiro || '',
+      ministerioObreiro: form.ministerioObreiro || '',
+      anciaoApresenta: form.anciaoApresenta ? getMembroNome(form.anciaoApresenta) || form.anciaoApresenta : '',
     };
     
     // Se está editando, deletar o antigo e adicionar o novo
@@ -275,6 +322,13 @@ export default function Agenda() {
       diaconoResponsavel: evento.diaconoResponsavel || '',
       diaconoAuxiliar: evento.diaconoAuxiliar || '',
       responsavelContagem: evento.responsavelContagem || '',
+      irmaoAtende: evento.irmaoAtende || '',
+      nomeServo: evento.nomeServo || '',
+      ministerioOrdenacao: evento.ministerioOrdenacao || '',
+      anciaoOrdena: evento.anciaoOrdena || '',
+      nomeObreiro: evento.nomeObreiro || '',
+      ministerioObreiro: evento.ministerioObreiro || '',
+      anciaoApresenta: evento.anciaoApresenta || '',
     });
     setSubtipoReunioes(evento.subtipoReuniao || '');
     setOpen(true);
@@ -314,6 +368,13 @@ export default function Agenda() {
               diaconoResponsavel: '',
               diaconoAuxiliar: '',
               responsavelContagem: '',
+              irmaoAtende: '',
+              nomeServo: '',
+              ministerioOrdenacao: '',
+              anciaoOrdena: '',
+              nomeObreiro: '',
+              ministerioObreiro: '',
+              anciaoApresenta: '',
             });
             setSubtipoReunioes('');
             setEditingEventId(null);
@@ -389,30 +450,8 @@ export default function Agenda() {
                     <h3 className="font-medium text-sm mb-3">Dados do Batismo</h3>
                   </div>
                   <div>
-                    <Label>Ancião</Label>
-                    <div className="space-y-2">
-                      {!anciaoOutraLocalidade ? (
-                        <>
-                          <Select value={form.anciaoAtende} onValueChange={(v) => setForm({ ...form, anciaoAtende: v })}>
-                            <SelectTrigger><SelectValue placeholder="Selecione um ancião" /></SelectTrigger>
-                            <SelectContent>
-                              {[...membros]
-                                .filter((m) => m.ministerio === 'Ancião')
-                                .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-                                .map((m) => (
-                                  <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
-                        </>
-                      ) : (
-                        <Input value={form.anciaoAtende} onChange={(e) => setForm({ ...form, anciaoAtende: e.target.value })} placeholder="Digite o nome do ancião" />
-                      )}
-                      <label className="flex items-center gap-2 cursor-pointer text-sm">
-                        <Checkbox checked={anciaoOutraLocalidade} onCheckedChange={(checked) => setAnciaoOutraLocalidade(checked === true)} />
-                        <span>De outra localidade</span>
-                      </label>
-                    </div>
+                    <Label>Irmão que Atende</Label>
+                    <Input value={form.irmaoAtende} onChange={(e) => setForm({ ...form, irmaoAtende: e.target.value })} placeholder="Nome do irmão que atende" />
                   </div>
                 </>
               )}
@@ -422,28 +461,8 @@ export default function Agenda() {
                     <h3 className="font-medium text-sm mb-3">Dados da Reunião para Mocidade</h3>
                   </div>
                   <div>
-                    <Label>Ancião</Label>
-                    <div className="space-y-2">
-                      {!anciaoOutraLocalidade ? (
-                        <Select value={form.anciaoAtende} onValueChange={(v) => setForm({ ...form, anciaoAtende: v })}>
-                          <SelectTrigger><SelectValue placeholder="Selecione um ancião" /></SelectTrigger>
-                          <SelectContent>
-                            {[...membros]
-                              .filter((m) => m.ministerio === 'Ancião')
-                              .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-                              .map((m) => (
-                                <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Input value={form.anciaoAtende} onChange={(e) => setForm({ ...form, anciaoAtende: e.target.value })} placeholder="Digite o nome do ancião" />
-                      )}
-                      <label className="flex items-center gap-2 cursor-pointer text-sm">
-                        <Checkbox checked={anciaoOutraLocalidade} onCheckedChange={(checked) => setAnciaoOutraLocalidade(checked === true)} />
-                        <span>De outra localidade</span>
-                      </label>
-                    </div>
+                    <Label>Irmão que Atende</Label>
+                    <Input value={form.irmaoAtende} onChange={(e) => setForm({ ...form, irmaoAtende: e.target.value })} placeholder="Nome do irmão que atende" />
                   </div>
                 </>
               )}
@@ -453,28 +472,8 @@ export default function Agenda() {
                     <h3 className="font-medium text-sm mb-3">Dados da Busca dos Dons</h3>
                   </div>
                   <div>
-                    <Label>Ancião</Label>
-                    <div className="space-y-2">
-                      {!anciaoOutraLocalidade ? (
-                        <Select value={form.anciaoAtende} onValueChange={(v) => setForm({ ...form, anciaoAtende: v })}>
-                          <SelectTrigger><SelectValue placeholder="Selecione um ancião" /></SelectTrigger>
-                          <SelectContent>
-                            {[...membros]
-                              .filter((m) => m.ministerio === 'Ancião')
-                              .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-                              .map((m) => (
-                                <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Input value={form.anciaoAtende} onChange={(e) => setForm({ ...form, anciaoAtende: e.target.value })} placeholder="Digite o nome do ancião" />
-                      )}
-                      <label className="flex items-center gap-2 cursor-pointer text-sm">
-                        <Checkbox checked={anciaoOutraLocalidade} onCheckedChange={(checked) => setAnciaoOutraLocalidade(checked === true)} />
-                        <span>De outra localidade</span>
-                      </label>
-                    </div>
+                    <Label>Irmão que Atende</Label>
+                    <Input value={form.irmaoAtende} onChange={(e) => setForm({ ...form, irmaoAtende: e.target.value })} placeholder="Nome do irmão que atende" />
                   </div>
                 </>
               )}
@@ -484,10 +483,24 @@ export default function Agenda() {
                     <h3 className="font-medium text-sm mb-3">Dados da Ordenação</h3>
                   </div>
                   <div>
-                    <Label>Ancião</Label>
+                    <Label>Nome do Servo</Label>
+                    <Input value={form.nomeServo} onChange={(e) => setForm({ ...form, nomeServo: e.target.value })} placeholder="Nome do irmão/irmã a ser ordenado(a)" />
+                  </div>
+                  <div>
+                    <Label>Ministério</Label>
+                    <Select value={form.ministerioOrdenacao} onValueChange={(v) => setForm({ ...form, ministerioOrdenacao: v })}>
+                      <SelectTrigger><SelectValue placeholder="Selecione o ministério" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Ancião">Ancião</SelectItem>
+                        <SelectItem value="Diácono">Diácono</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Ancião que Ordena</Label>
                     <div className="space-y-2">
                       {!anciaoOutraLocalidade ? (
-                        <Select value={form.anciaoAtende} onValueChange={(v) => setForm({ ...form, anciaoAtende: v })}>
+                        <Select value={form.anciaoOrdena} onValueChange={(v) => setForm({ ...form, anciaoOrdena: v })}>
                           <SelectTrigger><SelectValue placeholder="Selecione um ancião" /></SelectTrigger>
                           <SelectContent>
                             {[...membros]
@@ -499,7 +512,7 @@ export default function Agenda() {
                           </SelectContent>
                         </Select>
                       ) : (
-                        <Input value={form.anciaoAtende} onChange={(e) => setForm({ ...form, anciaoAtende: e.target.value })} placeholder="Digite o nome do ancião" />
+                        <Input value={form.anciaoOrdena} onChange={(e) => setForm({ ...form, anciaoOrdena: e.target.value })} placeholder="Digite o nome do ancião" />
                       )}
                       <label className="flex items-center gap-2 cursor-pointer text-sm">
                         <Checkbox checked={anciaoOutraLocalidade} onCheckedChange={(checked) => setAnciaoOutraLocalidade(checked === true)} />
@@ -515,28 +528,8 @@ export default function Agenda() {
                     <h3 className="font-medium text-sm mb-3">Dados do Culto para Jovens</h3>
                   </div>
                   <div>
-                    <Label>Ancião</Label>
-                    <div className="space-y-2">
-                      {!anciaoOutraLocalidade ? (
-                        <Select value={form.anciaoAtende} onValueChange={(v) => setForm({ ...form, anciaoAtende: v })}>
-                          <SelectTrigger><SelectValue placeholder="Selecione um ancião" /></SelectTrigger>
-                          <SelectContent>
-                            {[...membros]
-                              .filter((m) => m.ministerio === 'Ancião')
-                              .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-                              .map((m) => (
-                                <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Input value={form.anciaoAtende} onChange={(e) => setForm({ ...form, anciaoAtende: e.target.value })} placeholder="Digite o nome do ancião" />
-                      )}
-                      <label className="flex items-center gap-2 cursor-pointer text-sm">
-                        <Checkbox checked={anciaoOutraLocalidade} onCheckedChange={(checked) => setAnciaoOutraLocalidade(checked === true)} />
-                        <span>De outra localidade</span>
-                      </label>
-                    </div>
+                    <Label>Irmão que Atende</Label>
+                    <Input value={form.irmaoAtende} onChange={(e) => setForm({ ...form, irmaoAtende: e.target.value })} placeholder="Nome do irmão que atende" />
                   </div>
                 </>
               )}
@@ -601,28 +594,8 @@ export default function Agenda() {
                     <h3 className="font-medium text-sm mb-3">Dados da Santa Ceia</h3>
                   </div>
                   <div>
-                    <Label>Ancião</Label>
-                    <div className="space-y-2">
-                      {!anciaoOutraLocalidade ? (
-                        <Select value={form.anciaoAtende} onValueChange={(v) => setForm({ ...form, anciaoAtende: v })}>
-                          <SelectTrigger><SelectValue placeholder="Selecione um ancião" /></SelectTrigger>
-                          <SelectContent>
-                            {[...membros]
-                              .filter((m) => m.ministerio === 'Ancião')
-                              .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
-                              .map((m) => (
-                                <SelectItem key={m.id} value={m.id}>{m.nome}</SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <Input value={form.anciaoAtende} onChange={(e) => setForm({ ...form, anciaoAtende: e.target.value })} placeholder="Digite o nome do ancião" />
-                      )}
-                      <label className="flex items-center gap-2 cursor-pointer text-sm">
-                        <Checkbox checked={anciaoOutraLocalidade} onCheckedChange={(checked) => setAnciaoOutraLocalidade(checked === true)} />
-                        <span>De outra localidade</span>
-                      </label>
-                    </div>
+                    <Label>Irmão que Atende</Label>
+                    <Input value={form.irmaoAtende} onChange={(e) => setForm({ ...form, irmaoAtende: e.target.value })} placeholder="Nome do irmão que atende" />
                   </div>
                   <div>
                     <Label>Diácono Responsável</Label>
@@ -701,10 +674,60 @@ export default function Agenda() {
                     <h3 className="font-medium text-sm mb-3">Dados da RJM com Busca dos Dons</h3>
                   </div>
                   <div>
-                    <Label>Ancião</Label>
+                    <Label>Irmão que Atende</Label>
+                    <Input value={form.irmaoAtende} onChange={(e) => setForm({ ...form, irmaoAtende: e.target.value })} placeholder="Nome do irmão que atende" />
+                  </div>
+                </>
+              )}
+              {subtipoReunioes === 'Reunião de Jovens Agrupada' && (
+                <>
+                  <div className="border-t border-border pt-4">
+                    <h3 className="font-medium text-sm mb-3">Dados da Reunião de Jovens Agrupada</h3>
+                  </div>
+                  <div>
+                    <Label>Irmão que Atende</Label>
+                    <Input value={form.irmaoAtende} onChange={(e) => setForm({ ...form, irmaoAtende: e.target.value })} placeholder="Nome do irmão que atende" />
+                  </div>
+                </>
+              )}
+              {subtipoReunioes === 'Reunião com Jovens Estudantes' && (
+                <>
+                  <div className="border-t border-border pt-4">
+                    <h3 className="font-medium text-sm mb-3">Dados da Reunião com Jovens Estudantes</h3>
+                  </div>
+                  <div>
+                    <Label>Irmão que Atende</Label>
+                    <Input value={form.irmaoAtende} onChange={(e) => setForm({ ...form, irmaoAtende: e.target.value })} placeholder="Nome do irmão que atende" />
+                  </div>
+                </>
+              )}
+              {subtipoReunioes === 'Apresentação de Novos Obreiros' && (
+                <>
+                  <div className="border-t border-border pt-4">
+                    <h3 className="font-medium text-sm mb-3">Dados da Apresentação</h3>
+                  </div>
+                  <div>
+                    <Label>Nome do Irmão / Irmã</Label>
+                    <Input value={form.nomeObreiro} onChange={(e) => setForm({ ...form, nomeObreiro: e.target.value })} placeholder="Nome do irmão ou irmã" />
+                  </div>
+                  <div>
+                    <Label>Ministério</Label>
+                    <Select value={form.ministerioObreiro} onValueChange={(v) => setForm({ ...form, ministerioObreiro: v })}>
+                      <SelectTrigger><SelectValue placeholder="Selecione o ministério" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Cooperador do Oficio Ministerial">Cooperador do Oficio Ministerial</SelectItem>
+                        <SelectItem value="Cooperador de Jovens e Menores">Cooperador de Jovens e Menores</SelectItem>
+                        <SelectItem value="Encarregado Regional">Encarregado Regional</SelectItem>
+                        <SelectItem value="Encarregado Local">Encarregado Local</SelectItem>
+                        <SelectItem value="Examinadora">Examinadora</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Ancião que Apresenta</Label>
                     <div className="space-y-2">
                       {!anciaoOutraLocalidade ? (
-                        <Select value={form.anciaoAtende} onValueChange={(v) => setForm({ ...form, anciaoAtende: v })}>
+                        <Select value={form.anciaoApresenta} onValueChange={(v) => setForm({ ...form, anciaoApresenta: v })}>
                           <SelectTrigger><SelectValue placeholder="Selecione um ancião" /></SelectTrigger>
                           <SelectContent>
                             {[...membros]
@@ -716,7 +739,7 @@ export default function Agenda() {
                           </SelectContent>
                         </Select>
                       ) : (
-                        <Input value={form.anciaoAtende} onChange={(e) => setForm({ ...form, anciaoAtende: e.target.value })} placeholder="Digite o nome do ancião" />
+                        <Input value={form.anciaoApresenta} onChange={(e) => setForm({ ...form, anciaoApresenta: e.target.value })} placeholder="Digite o nome do ancião" />
                       )}
                       <label className="flex items-center gap-2 cursor-pointer text-sm">
                         <Checkbox checked={anciaoOutraLocalidade} onCheckedChange={(checked) => setAnciaoOutraLocalidade(checked === true)} />
@@ -844,6 +867,48 @@ export default function Agenda() {
                   <p className="font-medium">{selectedEvent.encarregadoRegional} {selectedEvent.encarregadoLocalidade && `(${selectedEvent.encarregadoLocalidade})`}</p>
                 </div>
               )}
+              {selectedEvent.irmaoAtende && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Irmão que Atende</p>
+                  <p className="font-medium">{selectedEvent.irmaoAtende}</p>
+                </div>
+              )}
+              {selectedEvent.nomeServo && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Nome do Servo</p>
+                  <p className="font-medium">{selectedEvent.nomeServo}</p>
+                </div>
+              )}
+              {selectedEvent.ministerioOrdenacao && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Ministério</p>
+                  <p className="font-medium">{selectedEvent.ministerioOrdenacao}</p>
+                </div>
+              )}
+              {selectedEvent.anciaoOrdena && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Ancião que Ordena</p>
+                  <p className="font-medium">{selectedEvent.anciaoOrdena}</p>
+                </div>
+              )}
+              {selectedEvent.nomeObreiro && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Nome do Irmão / Irmã</p>
+                  <p className="font-medium">{selectedEvent.nomeObreiro}</p>
+                </div>
+              )}
+              {selectedEvent.ministerioObreiro && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Ministério</p>
+                  <p className="font-medium">{selectedEvent.ministerioObreiro}</p>
+                </div>
+              )}
+              {selectedEvent.anciaoApresenta && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Ancião que Apresenta</p>
+                  <p className="font-medium">{selectedEvent.anciaoApresenta}</p>
+                </div>
+              )}
               {selectedEvent.diaconoResponsavel && (
                 <div>
                   <p className="text-xs text-muted-foreground">Diácono Responsável</p>
@@ -875,23 +940,23 @@ export default function Agenda() {
 
       {/* Filtros de Mês e Ano */}
       <div className="flex items-center gap-3 flex-wrap">
-        <Select value={filterYear} onValueChange={setFilterYear}>
+        <Select value={filterYear || 'all'} onValueChange={(v) => setFilterYear(v === 'all' ? '' : v)}>
           <SelectTrigger className="w-32">
             <SelectValue placeholder="Ano" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos os anos</SelectItem>
+            <SelectItem value="all">Todos os anos</SelectItem>
             {availableYears.map((y) => (
               <SelectItem key={y} value={y}>{y}</SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Select value={filterMonth} onValueChange={setFilterMonth}>
+        <Select value={filterMonth || 'all'} onValueChange={(v) => setFilterMonth(v === 'all' ? '' : v)}>
           <SelectTrigger className="w-40">
             <SelectValue placeholder="Mês" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todos os meses</SelectItem>
+            <SelectItem value="all">Todos os meses</SelectItem>
             {[
               { value: '1', label: 'Janeiro' },
               { value: '2', label: 'Fevereiro' },
@@ -954,6 +1019,15 @@ export default function Agenda() {
                     )}
                     {ev.descricao && (
                       <p className="text-xs text-muted-foreground mt-1">{ev.descricao}</p>
+                    )}
+                    {ev.irmaoAtende && (
+                      <p className="text-xs text-muted-foreground mt-1">👤 {ev.irmaoAtende}</p>
+                    )}
+                    {ev.nomeServo && (
+                      <p className="text-xs text-muted-foreground mt-1">✝️ {ev.nomeServo}</p>
+                    )}
+                    {ev.nomeObreiro && (
+                      <p className="text-xs text-muted-foreground mt-1">👤 {ev.nomeObreiro}</p>
                     )}
                   </div>
                 </div>

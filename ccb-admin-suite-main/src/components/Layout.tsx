@@ -13,6 +13,9 @@ import {
   BarChart3,
   Trophy,
   Droplet,
+  Heart,
+  PieChart,
+  Settings,
 } from 'lucide-react';
 
 const navItems = [
@@ -25,7 +28,10 @@ const navItems = [
   { path: '/reforcos', label: 'Reforços', icon: ShieldCheck },
   { path: '/relatorios', label: 'Relatórios', icon: BarChart3 },
   { path: '/resultados', label: 'Resultados', icon: Trophy },
+  { path: '/estatisticas', label: 'Estatísticas', icon: PieChart },
   { path: '/listas', label: 'Listas', icon: FileText },
+  { path: '/evangelizacao', label: 'Evangelização', icon: Heart },
+  { path: '/administracao', label: 'Administração', icon: Settings },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -50,22 +56,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {/* Sidebar */}
         <aside className="sidebar-gradient flex w-64 flex-col h-full">
           {/* Logo */}
-          <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6 bg-sidebar-background/50 backdrop-blur-sm">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-sidebar-primary to-yellow-500 shadow-md">
-              <Building2 className="h-5 w-5 text-sidebar-primary-foreground" />
+          <div className="flex h-16 items-center gap-3 border-b border-sidebar-border/50 px-5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-400 to-amber-400 shadow-lg shadow-indigo-900/40">
+              <Building2 className="h-4.5 w-4.5 text-white" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-sidebar-foreground font-sans">
+              <h1 className="text-[13px] font-bold text-sidebar-foreground tracking-tight leading-none">
                 ADM Ituiutaba
               </h1>
-              <p className="text-[10px] text-sidebar-foreground/60 font-sans">
+              <p className="text-[10px] text-sidebar-foreground/50 mt-0.5 tracking-wide uppercase">
                 CCB Admin
               </p>
             </div>
           </div>
 
           {/* Nav */}
-          <nav className="flex-1 space-y-2 p-3 overflow-y-auto">
+          <nav className="flex-1 space-y-0.5 p-3 overflow-y-auto">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               return (
@@ -73,21 +79,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   key={item.path}
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 font-sans ${
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-150 ${
                     isActive
-                      ? 'bg-gradient-to-r from-sidebar-primary to-yellow-500 text-sidebar-accent-foreground shadow-md'
-                      : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30 hover:text-sidebar-foreground'
+                      ? 'bg-white/10 text-white shadow-sm border border-white/10'
+                      : 'text-sidebar-foreground/60 hover:bg-white/5 hover:text-sidebar-foreground/90'
                   }`}
                 >
-                  <item.icon className={`h-4.5 w-4.5 flex-shrink-0 ${isActive ? 'text-sidebar-primary-foreground' : ''}`} />
+                  <item.icon className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-indigo-300' : 'text-sidebar-foreground/40'}`} />
                   <span className="whitespace-nowrap">{item.label}</span>
+                  {isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-indigo-400" />}
                 </Link>
               );
             })}
           </nav>
 
-          <div className="border-t border-sidebar-border bg-sidebar-background/50 p-4">
-            <p className="text-[10px] text-sidebar-foreground/40 text-center font-sans">
+          <div className="border-t border-sidebar-border/30 p-4">
+            <p className="text-[10px] text-sidebar-foreground/30 text-center tracking-widest uppercase">
               CCB Admin Suite • v1.0
             </p>
           </div>
@@ -101,28 +108,28 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         }`}
       >
         {/* Logo */}
-        <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6 bg-sidebar-background/50 backdrop-blur-sm">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-sidebar-primary to-yellow-500 shadow-md">
-            <Building2 className="h-5 w-5 text-sidebar-primary-foreground" />
+        <div className="flex h-16 items-center gap-3 border-b border-sidebar-border/50 px-5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-400 to-amber-400 shadow-lg shadow-indigo-900/40">
+            <Building2 className="h-4.5 w-4.5 text-white" />
           </div>
           <div>
-            <h1 className="text-sm font-bold text-sidebar-foreground font-sans">
+            <h1 className="text-[13px] font-bold text-sidebar-foreground tracking-tight leading-none">
               ADM Ituiutaba
             </h1>
-            <p className="text-[10px] text-sidebar-foreground/60 font-sans">
+            <p className="text-[10px] text-sidebar-foreground/50 mt-0.5 tracking-wide uppercase">
               CCB Admin
             </p>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="ml-auto text-sidebar-foreground/60 hover:text-sidebar-foreground rounded-lg p-1 hover:bg-sidebar-accent/20 transition-all"
+            className="ml-auto text-sidebar-foreground/50 hover:text-sidebar-foreground rounded-lg p-1.5 hover:bg-white/10 transition-all"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-4 w-4" />
           </button>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 space-y-2 p-3">
+        <nav className="flex-1 space-y-0.5 p-3">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -130,21 +137,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 key={item.path}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 font-sans ${
+                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-150 ${
                   isActive
-                    ? 'bg-gradient-to-r from-sidebar-primary to-yellow-500 text-sidebar-accent-foreground shadow-md'
-                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent/30 hover:text-sidebar-foreground'
+                    ? 'bg-white/10 text-white shadow-sm border border-white/10'
+                    : 'text-sidebar-foreground/60 hover:bg-white/5 hover:text-sidebar-foreground/90'
                 }`}
               >
-                <item.icon className={`h-4.5 w-4.5 ${isActive ? 'text-sidebar-primary-foreground' : ''}`} />
-                {item.label}
+                <item.icon className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-indigo-300' : 'text-sidebar-foreground/40'}`} />
+                <span>{item.label}</span>
+                {isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-indigo-400" />}
               </Link>
             );
           })}
         </nav>
 
-        <div className="border-t border-sidebar-border bg-sidebar-background/50 p-4">
-          <p className="text-[10px] text-sidebar-foreground/40 text-center font-sans">
+        <div className="border-t border-sidebar-border/30 p-4">
+          <p className="text-[10px] text-sidebar-foreground/30 text-center tracking-widest uppercase">
             CCB Admin Suite • v1.0
           </p>
         </div>
@@ -153,33 +161,33 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Main */}
       <div className="flex flex-col overflow-hidden flex-1 w-full">
         {/* Top bar */}
-        <header className="flex h-16 items-center gap-4 border-b border-border bg-gradient-to-r from-card to-card/50 backdrop-blur-sm px-4 lg:px-8 shadow-sm relative z-10">
+        <header className="flex h-14 items-center gap-3 border-b border-border bg-card px-4 lg:px-6 shadow-sm relative z-10">
           {sidebarHidden && (
             <button
               onClick={() => setSidebarHidden(false)}
-              className="rounded-lg p-2.5 text-muted-foreground hover:bg-muted transition-all hidden lg:block hover:text-foreground"
+              className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-all hidden lg:block hover:text-foreground"
               title="Mostrar menu"
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-4 w-4" />
             </button>
           )}
           <button
             onClick={() => setSidebarOpen(true)}
-            className="rounded-lg p-2.5 text-muted-foreground hover:bg-muted transition-all lg:hidden hover:text-foreground"
+            className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-all lg:hidden hover:text-foreground"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-4 w-4" />
           </button>
           {!sidebarHidden && (
             <button
               onClick={() => setSidebarHidden(true)}
-              className="rounded-lg p-2.5 text-muted-foreground hover:bg-muted transition-all hidden lg:block hover:text-foreground"
+              className="rounded-lg p-2 text-muted-foreground hover:bg-muted transition-all hidden lg:block hover:text-foreground"
               title="Ocultar menu"
             >
-              <ChevronLeft className="h-5 w-5" />
+              <ChevronLeft className="h-4 w-4" />
             </button>
           )}
           <div className="flex-1">
-            <h2 className="text-lg font-semibold text-foreground font-display">
+            <h2 className="text-base font-semibold text-foreground font-display tracking-tight">
               {navItems.find((i) => i.path === location.pathname)?.label || 'Painel'}
             </h2>
           </div>
